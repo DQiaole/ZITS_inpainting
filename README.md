@@ -6,13 +6,11 @@ Codes and trained models for our CVPR2022 paper ZITS_inpainting will be released
 
 ![](./imgs/supp_highres.png)
 
-
-##Acknowledgments
+## Acknowledgments
 
 * Some test images from [LaMa](https://github.com/saic-mdal/lama)
 
-
-##Cite
+## Cite
 
 If you found our program helpful, please consider citing:
 
