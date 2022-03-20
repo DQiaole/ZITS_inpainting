@@ -1,5 +1,6 @@
 import numpy as np
-
+import torch
+from torch import nn
 from .ffc import *
 from .layers import *
 
@@ -71,10 +72,9 @@ class MultiLabelEmbedding(nn.Module):
         return out
 
 
-class ReZeroFFC(nn.Module):
-    def __init__(self, config):
+class LaMa_model(nn.Module):
+    def __init__(self):
         super().__init__()
-        self.config = config
 
         self.pad1 = nn.ReflectionPad2d(3)
         self.conv1 = nn.Conv2d(in_channels=4, out_channels=64, kernel_size=7, padding=0)
@@ -91,9 +91,10 @@ class ReZeroFFC(nn.Module):
         self.bn4 = nn.BatchNorm2d(512)
 
         blocks = []
-        # resnet blocks
+        ### resnet blocks
         for i in range(9):
-            blocks.append(ResnetBlock_remove_IN(512, 1))
+            cur_resblock = ResnetBlock_remove_IN(512, 1)
+            blocks.append(cur_resblock)
 
         self.middle = nn.Sequential(*blocks)
 
@@ -108,9 +109,52 @@ class ReZeroFFC(nn.Module):
 
         self.padt = nn.ReflectionPad2d(3)
         self.convt4 = nn.Conv2d(in_channels=64, out_channels=3, kernel_size=7, padding=0)
-        self.act_last = nn.Tanh()
+        self.act_last = nn.Sigmoid()
 
-    def forward(self, x, rel_pos_emb, direct_emb, str_feats):
+    def forward(self, x, rel_pos_emb=None, direct_emb=None, str_feats=None):
+        x = self.pad1(x)
+        x = self.conv1(x)
+        x = self.bn1(x.to(torch.float32))
+        x = self.act(x)
+
+        x = self.conv2(x)
+        x = self.bn2(x.to(torch.float32))
+        x = self.act(x)
+
+        x = self.conv3(x)
+        x = self.bn3(x.to(torch.float32))
+        x = self.act(x)
+
+        x = self.conv4(x)
+        x = self.bn4(x.to(torch.float32))
+        x = self.act(x)
+
+        x = self.middle(x)
+
+        x = self.convt1(x)
+        x = self.bnt1(x.to(torch.float32))
+        x = self.act(x)
+
+        x = self.convt2(x)
+        x = self.bnt2(x.to(torch.float32))
+        x = self.act(x)
+
+        x = self.convt3(x)
+        x = self.bnt3(x.to(torch.float32))
+        x = self.act(x)
+
+        x = self.padt(x)
+        x = self.convt4(x)
+        x = self.act_last(x)
+        return x
+
+
+class ReZeroFFC(LaMa_model):
+    def __init__(self, config):
+        super().__init__()
+        self.config = config
+
+    def forward(self, x, rel_pos_emb=None, direct_emb=None, str_feats=None):
         x = self.pad1(x)
         x = self.conv1(x)
         if self.config.use_MPE:
@@ -149,8 +193,6 @@ class ReZeroFFC(nn.Module):
         x = self.padt(x)
         x = self.convt4(x)
         x = self.act_last(x)
-        x = (x + 1) / 2
-
         return x
 
 

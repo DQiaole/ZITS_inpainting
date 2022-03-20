@@ -9,7 +9,7 @@ import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
 
-from src.FTR_trainer import HighMPE
+from src.FTR_trainer import HighMPE, LaMa
 from src.config import Config
 
 
@@ -49,7 +49,10 @@ def main_worker(gpu, args):
     random.seed(config.SEED)
 
     # build the model and initialize
-    model = HighMPE(config, gpu, rank)
+    if args.lama:
+        model = LaMa(config, gpu, rank)
+    else:
+        model = HighMPE(config, gpu, rank)
 
     # model training
     if rank == 0:
@@ -76,6 +79,7 @@ if __name__ == "__main__":
     parser.add_argument('--node_rank', type=int, default=0, help='the id of this machine')
     parser.add_argument('--AMP', action='store_true', help='Automatic Mixed Precision')
     parser.add_argument('--DDP', action='store_true', help='Automatic Mixed Precision')
+    parser.add_argument('--lama', action='store_true', help='train the lama first')
 
     args = parser.parse_args()
     config_path = os.path.join(args.path, 'config.yml')

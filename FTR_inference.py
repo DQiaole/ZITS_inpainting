@@ -1,7 +1,4 @@
 import argparse
-
-from tqdm import tqdm
-
 from src.FTR_trainer import *
 from src.config import Config
 from src.inpainting_metrics import get_inpainting_metrics

@@ -17,6 +17,141 @@ def to_int(x):
     return tuple(map(int, x))
 
 
+class ImgDataset(torch.utils.data.Dataset):
+    def __init__(self, config, flist, mask_path=None, augment=True, training=True, test_mask_path=None):
+        super(ImgDataset, self).__init__()
+        self.augment = augment
+        self.training = training
+
+        self.data = []
+        f = open(flist, 'r')
+        for i in f.readlines():
+            i = i.strip()
+            self.data.append(i)
+        f.close()
+
+        if training:
+            self.irregular_mask_list = []
+            with open(mask_path[0]) as f:
+                for line in f:
+                    self.irregular_mask_list.append(line.strip())
+            self.irregular_mask_list = sorted(self.irregular_mask_list, key=lambda x: x.split('/')[-1])
+            self.segment_mask_list = []
+            with open(mask_path[1]) as f:
+                for line in f:
+                    self.segment_mask_list.append(line.strip())
+            self.segment_mask_list = sorted(self.segment_mask_list, key=lambda x: x.split('/')[-1])
+        else:
+            self.mask_list = glob.glob(test_mask_path + '/*')
+            self.mask_list = sorted(self.mask_list, key=lambda x: x.split('/')[-1])
+        self.input_size = config.INPUT_SIZE
+        self.config = config
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, index):
+        item = self.load_item(index)
+        return item
+
+    def load_name(self, index):
+        name = self.data[index]
+        return os.path.basename(name)
+
+    def load_item(self, index):
+        size = self.input_size
+        # load image
+        img = Image.open(self.data[index]).convert("RGB")
+        img = np.array(img)
+        while img is None:
+            print('Bad image {}...'.format(self.data[index]))
+            index = random.randint(0, len(self.data) - 1)
+            img = Image.open(self.data[index]).convert("RGB")
+            img = np.array(img)
+        # resize/crop if needed
+        if size != 0:
+            img = self.resize(img, size, size)
+        # load mask
+        mask = self.load_mask(img, index)
+        # augment data
+        if self.augment and random.random() > 0.5 and self.training:
+            img = img[:, ::-1, ...].copy()
+        if self.augment and random.random() > 0.5 and self.training:
+            mask = mask[:, ::-1, ...].copy()
+        if self.augment and random.random() > 0.5 and self.training:
+            mask = mask[::-1, :, ...].copy()
+
+        batch = dict()
+        batch['image'] = self.to_tensor(img)
+        batch['mask'] = self.to_tensor(mask)
+        batch['name'] = self.load_name(index)
+        return batch
+
+    def load_mask(self, img, index):
+        imgh, imgw = img.shape[0:2]
+        if self.training is False:
+            mask = cv2.imread(self.mask_list[index], cv2.IMREAD_GRAYSCALE)
+            mask = cv2.resize(mask, (imgw, imgh), interpolation=cv2.INTER_NEAREST)
+            mask = (mask > 127).astype(np.uint8) * 255
+            return mask
+        else:  # train mode: 40% mask with random brush, 40% mask with coco mask, 20% with additions
+            rdv = random.random()
+            if rdv < self.config.MASK_RATE[0]:
+                mask_index = random.randint(0, len(self.irregular_mask_list) - 1)
+                mask = cv2.imread(self.irregular_mask_list[mask_index],
+                                  cv2.IMREAD_GRAYSCALE)
+            elif rdv < self.config.MASK_RATE[1]:
+                mask_index = random.randint(0, len(self.segment_mask_list) - 1)
+                mask = cv2.imread(self.segment_mask_list[mask_index],
+                                  cv2.IMREAD_GRAYSCALE)
+            else:
+                mask_index1 = random.randint(0, len(self.segment_mask_list) - 1)
+                mask_index2 = random.randint(0, len(self.irregular_mask_list) - 1)
+                mask1 = cv2.imread(self.segment_mask_list[mask_index1],
+                                   cv2.IMREAD_GRAYSCALE).astype(np.float)
+                mask2 = cv2.imread(self.irregular_mask_list[mask_index2],
+                                   cv2.IMREAD_GRAYSCALE).astype(np.float)
+                mask = np.clip(mask1 + mask2, 0, 255).astype(np.uint8)
+
+            if mask.shape[0] != imgh or mask.shape[1] != imgw:
+                mask = cv2.resize(mask, (imgw, imgh), interpolation=cv2.INTER_NEAREST)
+            mask = (mask > 127).astype(np.uint8) * 255  # threshold due to interpolation
+            return mask
+
+    def to_tensor(self, img):
+        # img = Image.fromarray(img)
+        img_t = F.to_tensor(img).float()
+        return img_t
+
+    def resize(self, img, height, width, center_crop=False):
+        imgh, imgw = img.shape[0:2]
+
+        if center_crop and imgh != imgw:
+            # center crop
+            side = np.minimum(imgh, imgw)
+            j = (imgh - side) // 2
+            i = (imgw - side) // 2
+            img = img[j:j + side, i:i + side, ...]
+
+        if imgh > height and imgw > width:
+            inter = cv2.INTER_AREA
+        else:
+            inter = cv2.INTER_LINEAR
+        img = cv2.resize(img, (height, width), interpolation=inter)
+        return img
+
+    def create_iterator(self, batch_size):
+        while True:
+            sample_loader = DataLoader(
+                dataset=self,
+                batch_size=batch_size,
+                drop_last=True
+            )
+
+            for item in sample_loader:
+                yield item
+
+
 class DynamicDataset(torch.utils.data.Dataset):
     def __init__(self, flist, batch_size,
                  mask_path=None, add_pos=False, pos_num=128,
