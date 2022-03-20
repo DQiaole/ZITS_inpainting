@@ -3,7 +3,6 @@ import logging
 import os
 import sys
 import torch
-import torch.distributed as dist
 from datasets.dataset_TSR import ContinuousEdgeLineDatasetMask, ContinuousEdgeLineDatasetMaskFinetune
 from src.TSR_trainer import TrainerConfig, TrainerForContinuousEdgeLine, TrainerForEdgeLineFinetune
 from src.models.TSR_model import EdgeLineGPT256RelBCE, EdgeLineGPTConfig
@@ -34,14 +33,18 @@ def main_worker(rank, opts):
     # Define the dataset
     if not opts.MaP:
         train_dataset = ContinuousEdgeLineDatasetMask(opts.data_path, mask_path=opts.mask_path, is_train=True,
-                                                      mask_rates=opts.mask_rates, image_size=opts.image_size)
+                                                      mask_rates=opts.mask_rates, image_size=opts.image_size,
+                                                      line_path=opts.train_line_path)
         test_dataset = ContinuousEdgeLineDatasetMask(opts.validation_path, test_mask_path=opts.valid_mask_path,
-                                                     is_train=False, image_size=opts.image_size)
+                                                     is_train=False, image_size=opts.image_size,
+                                                     line_path=opts.val_line_path)
     else:
         train_dataset = ContinuousEdgeLineDatasetMaskFinetune(opts.data_path, mask_path=opts.mask_path, is_train=True,
-                                                              mask_rates=opts.mask_rates, image_size=opts.image_size)
+                                                              mask_rates=opts.mask_rates, image_size=opts.image_size,
+                                                              line_path=opts.train_line_path)
         test_dataset = ContinuousEdgeLineDatasetMaskFinetune(opts.validation_path, test_mask_path=opts.valid_mask_path,
-                                                             is_train=False, image_size=opts.image_size)
+                                                             is_train=False, image_size=opts.image_size,
+                                                             line_path=opts.val_line_path)
 
     iterations_per_epoch = len(train_dataset.image_id_list) // opts.batch_size
     train_epochs = opts.train_epoch
@@ -71,13 +74,15 @@ if __name__ == '__main__':
     parser.add_argument('--GPU_ids', type=str, default='0')
     parser.add_argument('--ckpt_path', type=str, default='./ckpt')
     parser.add_argument('--data_path', type=str, default=None, help='Indicate where is the training set')
+    parser.add_argument('--train_line_path', type=str, default=None, help='Indicate where is the wireframes of training set')
     parser.add_argument('--mask_path', type=list, default=['irregular_mask_list.txt', 'coco_mask_list.txt'])
     parser.add_argument('--mask_rates', type=list, default=[0.4, 0.8, 1.0],
                         help='irregular rate, coco rate, addition rate')
     parser.add_argument('--batch_size', type=int, default=32, help='16*8 maybe suitable for V100')
-    parser.add_argument('--train_epoch', type=int, default=100, help='how many epochs')
+    parser.add_argument('--train_epoch', type=int, default=15, help='how many epochs')
     parser.add_argument('--print_freq', type=int, default=100, help='While training, the freq of printing log')
     parser.add_argument('--validation_path', type=str, default=None, help='where is the validation set of ImageNet')
+    parser.add_argument('--val_line_path', type=str, default=None, help='Indicate where is the wireframes of val set')
     parser.add_argument('--valid_mask_path', type=str, default=None)
     parser.add_argument('--image_size', type=int, default=256, help='input sequence length = image_size*image_size')
     parser.add_argument('--resume_ckpt', type=str, default='latest.pth', help='start from where, the default is latest')
@@ -87,9 +92,8 @@ if __name__ == '__main__':
     parser.add_argument('--n_layer', type=int, default=16)
     parser.add_argument('--n_embd', type=int, default=256)
     parser.add_argument('--n_head', type=int, default=8)
-    parser.add_argument('--lr', type=float, default=6e-4)
-    # DDP+AMP
-    parser.add_argument('--DDP', action='store_true', help='using DDP rather than normal data parallel')
+    parser.add_argument('--lr', type=float, default=4.24e-4)
+    # AMP
     parser.add_argument('--nodes', type=int, default=1, help='how many machines')
     parser.add_argument('--gpus', type=int, default=1, help='how many GPUs in one node')
     parser.add_argument('--AMP', action='store_true', help='Automatic Mixed Precision')
@@ -104,8 +108,7 @@ if __name__ == '__main__':
     opts.world_size = opts.nodes * opts.gpus
     os.environ['MASTER_ADDR'] = 'localhost'
     os.environ['MASTER_PORT'] = '12380'
-    dist.init_process_group(backend='nccl', init_method='env://')
-    rank = torch.distributed.get_rank()
+    rank = 0
     torch.cuda.set_device(rank)
 
     logging.basicConfig(

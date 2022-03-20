@@ -9,7 +9,7 @@ import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
 
-from src.FTR_trainer import HighMPE, LaMa
+from src.FTR_trainer import ZITS, LaMa
 from src.config import Config
 
 
@@ -27,12 +27,9 @@ def main_worker(gpu, args):
     # load config file
     config = Config(args.config_path)
     config.MODE = 1
-    if args.model:
-        config.MODEL = args.model
     config.nodes = args.nodes
     config.gpus = args.gpus
     config.GPU_ids = args.GPU_ids
-    config.AMP = args.AMP
     config.DDP = args.DDP
     if config.DDP:
         config.world_size = args.world_size
@@ -52,7 +49,7 @@ def main_worker(gpu, args):
     if args.lama:
         model = LaMa(config, gpu, rank)
     else:
-        model = HighMPE(config, gpu, rank)
+        model = ZITS(config, gpu, rank)
 
     # model training
     if rank == 0:
@@ -77,7 +74,6 @@ if __name__ == "__main__":
     parser.add_argument('--gpus', type=int, default=1, help='how many GPUs in one node')
     parser.add_argument('--GPU_ids', type=str, default='0')
     parser.add_argument('--node_rank', type=int, default=0, help='the id of this machine')
-    parser.add_argument('--AMP', action='store_true', help='Automatic Mixed Precision')
     parser.add_argument('--DDP', action='store_true', help='Automatic Mixed Precision')
     parser.add_argument('--lama', action='store_true', help='train the lama first')
 

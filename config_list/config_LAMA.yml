@@ -25,9 +25,6 @@ run_title: ''
 
 training_model:
   kind: default
-  visualize_each_iters: 1000
-  concat_mask: true
-  store_discr_outputs_for_vis: true
 losses:
   l1:
     weight_missing: 0
@@ -73,8 +70,6 @@ generator:
     enable_lfu: false
 discriminator:
   input_nc: 3
-  ndf: 64
-  n_layers: 4
 
 defaults:
   - location: docker

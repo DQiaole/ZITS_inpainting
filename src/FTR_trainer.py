@@ -23,12 +23,14 @@ class LaMa():
         kwargs.pop('kind')
 
         self.inpaint_model = LaMaInpaintingTrainingModule(config, gpu=gpu, rank=rank, **kwargs).to(gpu)
-        # test mode
+
         self.train_dataset = ImgDataset(config, config.TRAIN_FLIST, config.TRAIN_MASK_FLIST, augment=True,
                                         training=True, test_mask_path=None)
         if config.DDP:
             self.train_sampler = DistributedSampler(self.train_dataset, num_replicas=config.world_size,
                                                     rank=self.global_rank, shuffle=True)
+        else:
+            self.train_sampler = RandomSampler(self.train_dataset)
         self.val_dataset = ImgDataset(config, config.VAL_FLIST, mask_path=None, augment=False,
                                       training=False, test_mask_path=config.TEST_MASK_FLIST)
         self.sample_iterator = self.val_dataset.create_iterator(config.SAMPLE_SIZE)
@@ -37,12 +39,6 @@ class LaMa():
         self.results_path = os.path.join(config.PATH, 'results')
         self.val_path = os.path.join(config.PATH, 'validation')
         create_dir(self.val_path)
-
-        if config.RESULTS is not None:
-            self.results_path = os.path.join(config.RESULTS)
-
-        if config.DEBUG is not None and config.DEBUG != 0:
-            self.debug = True
 
         self.log_file = os.path.join(config.PATH, 'log_' + self.model_name + '.dat')
 
@@ -55,7 +51,7 @@ class LaMa():
     def train(self):
         if self.config.DDP:
             train_loader = DataLoader(self.train_dataset, shuffle=False, pin_memory=True,
-                                      batch_size=self.config.BATCH_SIZE // self.config.world_size,  ## BS of each GPU
+                                      batch_size=self.config.BATCH_SIZE // self.config.world_size,  # BS of each GPU
                                       num_workers=12, sampler=self.train_sampler)
         else:
             train_loader = DataLoader(self.train_dataset, shuffle=True, pin_memory=True,
@@ -72,7 +68,7 @@ class LaMa():
         while keep_training:
             epoch += 1
             if self.config.DDP:
-                self.train_sampler.set_epoch(epoch)  ## Shuffle each epoch
+                self.train_sampler.set_epoch(epoch)  # Shuffle each epoch
             epoch_start = time.time()
             if self.global_rank == 0:
                 print('\n\nTraining epoch: %d' % epoch)
@@ -82,7 +78,7 @@ class LaMa():
             else:
                 progbar = Progbar(total, width=20, stateful_metrics=['epoch', 'iter', 'loss_scale'])
 
-            for items in train_loader:
+            for _, items in enumerate(train_loader):
                 self.inpaint_model.train()
 
                 items['image'] = items['image'].to(self.device)
@@ -248,7 +244,7 @@ class LaMa():
         return img.int()
 
 
-class HighMPE():
+class ZITS():
     def __init__(self, config, gpu, rank):
         self.config = config
         self.device = gpu
@@ -327,8 +323,8 @@ class HighMPE():
             epoch += 1
             if self.config.DDP or self.config.DP:
                 self.train_sampler.set_epoch(epoch + 1)
-                if self.config.fix_256 is None or self.config.fix_256 is False:
-                    self.train_dataset.reset_dataset(self.train_sampler)
+            if self.config.fix_256 is None or self.config.fix_256 is False:
+                self.train_dataset.reset_dataset(self.train_sampler)
 
             epoch_start = time.time()
             if self.global_rank == 0:

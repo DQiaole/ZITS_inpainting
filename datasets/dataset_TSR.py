@@ -9,6 +9,8 @@ import torchvision.transforms.functional as F
 from skimage.color import rgb2gray
 from skimage.feature import canny
 from torch.utils.data import Dataset
+import pickle
+import skimage.draw
 
 sys.path.append('..')
 
@@ -20,7 +22,7 @@ def to_int(x):
 class ContinuousEdgeLineDatasetMask(Dataset):
 
     def __init__(self, pt_dataset, mask_path=None, test_mask_path=None, is_train=False, mask_rates=None,
-                 image_size=256):
+                 image_size=256, line_path=None):
 
         self.is_train = is_train
         self.pt_dataset = pt_dataset
@@ -48,7 +50,7 @@ class ContinuousEdgeLineDatasetMask(Dataset):
         self.image_size = image_size
         self.training = is_train
         self.mask_rates = mask_rates
-        self.line_path = "wireframe_imgs"
+        self.line_path = line_path
         self.wireframe_th = 0.85
 
     def __len__(self):
@@ -114,13 +116,21 @@ class ContinuousEdgeLineDatasetMask(Dataset):
     def load_edge(self, img):
         return canny(img, sigma=2, mask=None).astype(np.float)
 
-    def load_line(self, idx):
+    def load_wireframe(self, idx, size):
         selected_img_name = self.image_id_list[idx]
-        line_name = selected_img_name.split("/")
-        line_name[-2] = self.line_path
-        line_name = "/".join(line_name)
-        img = cv2.imread(line_name, 0)
-        return img / 255
+        line_name = self.line_path + '/' + os.path.basename(selected_img_name).replace('.png', '.pkl').replace('.jpg', '.pkl')
+        wf = pickle.load(open(line_name, 'rb'))
+        lmap = np.zeros((size, size))
+        for i in range(len(wf['scores'])):
+            if wf['scores'][i] > self.wireframe_th:
+                line = wf['lines'][i].copy()
+                line[0] = line[0] * size
+                line[1] = line[1] * size
+                line[2] = line[2] * size
+                line[3] = line[3] * size
+                rr, cc, value = skimage.draw.line_aa(*to_int(line[0:2]), *to_int(line[2:4]))
+                lmap[rr, cc] = np.maximum(lmap[rr, cc], value)
+        return lmap
 
     def __getitem__(self, idx):
         selected_img_name = self.image_id_list[idx]
@@ -134,7 +144,7 @@ class ContinuousEdgeLineDatasetMask(Dataset):
         img = self.resize(img, self.image_size, self.image_size, center_crop=False)
         img_gray = rgb2gray(img)
         edge = self.load_edge(img_gray)
-        line = self.load_line(idx)
+        line = self.load_wireframe(idx, self.image_size)
         # load mask
         mask = self.load_mask(img, idx)
         # augment data
@@ -160,8 +170,8 @@ class ContinuousEdgeLineDatasetMask(Dataset):
 class ContinuousEdgeLineDatasetMaskFinetune(ContinuousEdgeLineDatasetMask):
 
     def __init__(self, pt_dataset, mask_path=None, test_mask_path=None,
-                 is_train=False, mask_rates=None, image_size=256):
-        super().__init__(pt_dataset, mask_path, test_mask_path, is_train, mask_rates, image_size)
+                 is_train=False, mask_rates=None, image_size=256, line_path=None):
+        super().__init__(pt_dataset, mask_path, test_mask_path, is_train, mask_rates, image_size, line_path)
 
     def __getitem__(self, idx):
         selected_img_name = self.image_id_list[idx]
@@ -175,7 +185,7 @@ class ContinuousEdgeLineDatasetMaskFinetune(ContinuousEdgeLineDatasetMask):
         img = self.resize(img, self.image_size, self.image_size, center_crop=False)
         img_gray = rgb2gray(img)
         edge = self.load_edge(img_gray)
-        line = self.load_line(idx)
+        line = self.load_wireframe(idx, self.image_size)
         # load mask
         mask = self.load_mask(img, idx)
         # augment data

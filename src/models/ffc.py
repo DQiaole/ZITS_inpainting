@@ -62,7 +62,7 @@ class FourierUnit(nn.Module):
 
 class SpectralTransform(nn.Module):
 
-    def __init__(self, in_channels, out_channels, stride=1, groups=1, enable_lfu=True, **fu_kwargs):
+    def __init__(self, in_channels, out_channels, stride=1, groups=1, enable_lfu=True, separable_fu=False, **fu_kwargs):
         # bn_layer not used
         super(SpectralTransform, self).__init__()
         self.enable_lfu = enable_lfu
@@ -72,10 +72,12 @@ class SpectralTransform(nn.Module):
             self.downsample = nn.Identity()
 
         self.stride = stride
-        self.conv1 = nn.Conv2d(in_channels, out_channels //
-                               2, kernel_size=1, groups=groups, bias=False)
-        self.bn1 = nn.BatchNorm2d(out_channels // 2)
-        self.act1 = nn.ReLU(inplace=True)
+        self.conv1 = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels //
+                      2, kernel_size=1, groups=groups, bias=False),
+            nn.BatchNorm2d(out_channels // 2),
+            nn.ReLU(inplace=True)
+        )
         fu_class = FourierUnit
         self.fu = fu_class(
             out_channels // 2, out_channels // 2, groups, **fu_kwargs)
@@ -89,8 +91,6 @@ class SpectralTransform(nn.Module):
 
         x = self.downsample(x)
         x = self.conv1(x)
-        x = self.bn1(x.to(torch.float32))
-        x = self.act1(x)
         output = self.fu(x)
 
         if self.enable_lfu:

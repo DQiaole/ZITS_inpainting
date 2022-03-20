@@ -11,6 +11,7 @@ import torchvision.transforms.functional as F
 from skimage.color import rgb2gray
 from skimage.feature import canny
 from torch.utils.data import DataLoader
+from PIL import Image
 
 
 def to_int(x):
@@ -61,13 +62,12 @@ class ImgDataset(torch.utils.data.Dataset):
     def load_item(self, index):
         size = self.input_size
         # load image
-        img = Image.open(self.data[index]).convert("RGB")
-        img = np.array(img)
+        img = cv2.imread(self.data[index])
         while img is None:
             print('Bad image {}...'.format(self.data[index]))
-            index = random.randint(0, len(self.data) - 1)
-            img = Image.open(self.data[index]).convert("RGB")
-            img = np.array(img)
+            idx = random.randint(0, len(self.data) - 1)
+            img = cv2.imread(self.data[idx])
+        img = img[:, :, ::-1]
         # resize/crop if needed
         if size != 0:
             img = self.resize(img, size, size)
@@ -282,8 +282,8 @@ class DynamicDataset(torch.utils.data.Dataset):
         gray = rgb2gray(img)
         edge = self.load_edge(gray, sigma=self.min_sigma + ((size - 256) / 256 * (self.max_sigma - self.min_sigma)))
         gray_256 = rgb2gray(img_256)
-        edge_256 = self.load_edge(gray_256, sigma=self.min_sigma + ((self.str_size - 256) / 256 *
-                                                                    (self.max_sigma - self.min_sigma)))
+        edge_256 = self.load_edge(gray_256, sigma=self.min_sigma + (
+                (self.str_size - 256) / 256 * (self.max_sigma - self.min_sigma)))
 
         # load line
         line = self.load_wireframe(index, size)

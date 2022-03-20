@@ -130,13 +130,6 @@ class TrainerForContinuousEdgeLine:
                 self.logger.info(
                     'Warnning: There is no previous optimizer found. An initialized optimizer will be used.')
 
-        if self.config.AMP:
-            from apex.parallel import DistributedDataParallel
-            model = DistributedDataParallel(model)
-        else:
-            model = DDP(self.model, device_ids=[self.device], output_device=self.device)
-
-        # TODO: Use different seeds to initialize each worker. (This issue is caused by the bug of pytorch itself)
         train_loader = DataLoader(self.train_dataset, pin_memory=True,
                                   batch_size=config.batch_size // config.world_size,  # BS of each GPU
                                   num_workers=config.num_workers, sampler=self.train_sampler)
@@ -311,12 +304,6 @@ class TrainerForEdgeLineFinetune(TrainerForContinuousEdgeLine):
             if self.global_rank == 0:
                 self.logger.info(
                     'Warnning: There is no previous optimizer found. An initialized optimizer will be used.')
-
-        if self.config.AMP:
-            from apex.parallel import DistributedDataParallel
-            model = DistributedDataParallel(model)
-        else:
-            model = DDP(self.model, device_ids=[self.device], output_device=self.device)
 
         # TODO: Use different seeds to initialize each worker. (This issue is caused by the bug of pytorch itself)
         train_loader = DataLoader(self.train_dataset, pin_memory=True,

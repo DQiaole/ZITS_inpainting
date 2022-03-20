@@ -2,6 +2,17 @@
 
 Codes and trained models for our CVPR2022 paper ZITS_inpainting will be released here.
 
+## Overview
+
+## News
+
+
+## Preparation
+
+
+## Training
+
+
 ## More 1K Results
 
 ![](./imgs/supp_highres.jpg)

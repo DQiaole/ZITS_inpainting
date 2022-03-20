@@ -43,7 +43,6 @@ run_title: ''
 
 training_model:
   kind: default
-  concat_mask: true
 losses:
   l1:
     weight_missing: 0

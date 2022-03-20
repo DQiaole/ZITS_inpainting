@@ -135,7 +135,7 @@ class AxialAttention(nn.Module):
             row_rel_pos = self._cal_1d_pos_emb(x, rel_pos_onehot_size=h, row=True)
         else:
             row_rel_pos = None
-        x_row = self.attn_row(self.rln1(x), mask_row, row_rel_pos, return_att=return_att, debug=debug)
+        x_row = self.attn_row(self.rln1(x), mask_row, row_rel_pos, return_att=return_att)
         if return_att:
             x_row, att_row = x_row
         else:
@@ -181,6 +181,48 @@ class BlockAxial(AxialAttention):
         super().__init__(config.n_embd, config.n_head, config.attn_pdrop, config.resid_pdrop, 32, 32)
 
 
+class CausalSelfAttention(nn.Module):
+
+    def __init__(self, config):
+        super().__init__()
+        assert config.n_embd % config.n_head == 0
+        # key, query, value projections for all heads
+        self.key = nn.Linear(config.n_embd, config.n_embd)
+        self.query = nn.Linear(config.n_embd, config.n_embd)
+        self.value = nn.Linear(config.n_embd, config.n_embd)
+        # regularization
+        self.attn_drop = nn.Dropout(config.attn_pdrop)
+        self.resid_drop = nn.Dropout(config.resid_pdrop)
+        # output projection
+        self.proj = nn.Linear(config.n_embd, config.n_embd)
+
+        self.register_buffer("mask", torch.tril(torch.ones(config.block_size, config.block_size))
+                             .view(1, 1, config.block_size, config.block_size))
+        self.n_head = config.n_head
+
+        self.config = config
+
+    def forward(self, x, layer_past=None):
+        B, T, C = x.size()
+
+        # calculate query, key, values for all heads in batch and move head forward to be the batch dim
+        k = self.key(x).view(B, T, self.n_head, C // self.n_head).transpose(1, 2)  # (B, nh, T, hs)
+        q = self.query(x).view(B, T, self.n_head, C // self.n_head).transpose(1, 2)  # (B, nh, T, hs)
+        v = self.value(x).view(B, T, self.n_head, C // self.n_head).transpose(1, 2)  # (B, nh, T, hs)
+
+        # causal self-attention; Self-attend: (B, nh, T, hs) x (B, nh, hs, T) -> (B, nh, T, T)
+        att = (q @ k.transpose(-2, -1)) * (1.0 / math.sqrt(k.size(-1)))
+
+        att = F.softmax(att, dim=-1)
+        att = self.attn_drop(att)
+        y = att @ v  # (B, nh, T, T) x (B, nh, T, hs) -> (B, nh, T, hs)
+        y = y.transpose(1, 2).contiguous().view(B, T, C)  # re-assemble all head outputs side by side
+
+        # output projection
+        y = self.resid_drop(self.proj(y))
+        return y
+
+
 class my_Block_2(nn.Module):
     """ Transformer block with original GELU2 """
 
@@ -188,7 +230,7 @@ class my_Block_2(nn.Module):
         super().__init__()
         self.ln1 = nn.LayerNorm(config.n_embd)
         self.ln2 = nn.LayerNorm(config.n_embd)
-        self.attn = SelfAttention(config.n_embd, config.n_head, config.attn_pdrop, config.resid_pdrop)
+        self.attn = CausalSelfAttention(config)
         self.mlp = nn.Sequential(
             nn.Linear(config.n_embd, 4 * config.n_embd),
             GELU2(),
