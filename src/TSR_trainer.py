@@ -467,4 +467,3 @@ class TrainerForEdgeLineFinetune(TrainerForContinuousEdgeLine):
             line_f1s.append(f1.item())
         return float(np.mean(edge_precisions)), float(np.mean(edge_recalls)), float(np.mean(edge_f1s)), \
                float(np.mean(line_precisions)), float(np.mean(line_recalls)), float(np.mean(line_f1s))
-    
