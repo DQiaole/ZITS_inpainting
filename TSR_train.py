@@ -87,7 +87,7 @@ if __name__ == '__main__':
     parser.add_argument('--image_size', type=int, default=256, help='input sequence length = image_size*image_size')
     parser.add_argument('--resume_ckpt', type=str, default='latest.pth', help='start from where, the default is latest')
     # Mask and predict finetune
-    parser.add_argument('--MaP', type=bool, default=False, help='set True when finetune for mask and predict')
+    parser.add_argument('--MaP', action='store_true', help='set True when finetune for mask and predict')
     # Define the size of transformer
     parser.add_argument('--n_layer', type=int, default=16)
     parser.add_argument('--n_embd', type=int, default=256)
