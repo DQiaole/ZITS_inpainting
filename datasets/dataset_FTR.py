@@ -11,7 +11,6 @@ import torchvision.transforms.functional as F
 from skimage.color import rgb2gray
 from skimage.feature import canny
 from torch.utils.data import DataLoader
-from PIL import Image
 
 
 def to_int(x):
@@ -69,8 +68,7 @@ class ImgDataset(torch.utils.data.Dataset):
             img = cv2.imread(self.data[idx])
         img = img[:, :, ::-1]
         # resize/crop if needed
-        if size != 0:
-            img = self.resize(img, size, size)
+        img = self.resize(img, size, size)
         # load mask
         mask = self.load_mask(img, index)
         # augment data

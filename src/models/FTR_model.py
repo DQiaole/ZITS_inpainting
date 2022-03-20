@@ -325,7 +325,7 @@ class LaMaInpaintingTrainingModule(LaMaBaseInpaintingTrainingModule):
                                                      generator=self.generator, discriminator=self.discriminator)
         discr_real_pred, discr_real_features = self.discriminator(batch['image'])
 
-        real_loss = self.adversarial_loss.discriminator_real_loss(real_batch=batch['image'],
+        real_loss, _, _ = self.adversarial_loss.discriminator_real_loss(real_batch=batch['image'],
                                                                   discr_real_pred=discr_real_pred)
         batch = self.forward(batch)
         predicted_img = batch[self.image_to_discriminator].detach()
@@ -367,7 +367,7 @@ class LaMaInpaintingTrainingModule(LaMaBaseInpaintingTrainingModule):
 
         # discriminator
         # adversarial_loss calls backward by itself
-        mask_for_discr = supervised_mask if self.distance_weighted_mask_for_discr else original_mask
+        mask_for_discr = original_mask
         self.adversarial_loss.pre_generator_step(real_batch=img, fake_batch=predicted_img,
                                                  generator=self.generator, discriminator=self.discriminator)
         discr_fake_pred, discr_fake_features = self.discriminator(predicted_img.to(torch.float32))

@@ -30,7 +30,7 @@ class LaMa():
             self.train_sampler = DistributedSampler(self.train_dataset, num_replicas=config.world_size,
                                                     rank=self.global_rank, shuffle=True)
         else:
-            self.train_sampler = RandomSampler(self.train_dataset)
+            self.train_sampler = DistributedSampler(self.train_dataset, num_replicas=1, rank=0, shuffle=True)
         self.val_dataset = ImgDataset(config, config.VAL_FLIST, mask_path=None, augment=False,
                                       training=False, test_mask_path=config.TEST_MASK_FLIST)
         self.sample_iterator = self.val_dataset.create_iterator(config.SAMPLE_SIZE)
@@ -51,15 +51,17 @@ class LaMa():
     def train(self):
         if self.config.DDP:
             train_loader = DataLoader(self.train_dataset, shuffle=False, pin_memory=True,
-                                      batch_size=self.config.BATCH_SIZE // self.config.world_size,  # BS of each GPU
+                                      batch_size=self.config.BATCH_SIZE // self.config.world_size,
                                       num_workers=12, sampler=self.train_sampler)
         else:
-            train_loader = DataLoader(self.train_dataset, shuffle=True, pin_memory=True,
-                                      batch_size=self.config.BATCH_SIZE, num_workers=12)
+            train_loader = DataLoader(self.train_dataset, pin_memory=True,
+                                      batch_size=self.config.BATCH_SIZE, num_workers=12,
+                                      sampler=self.train_sampler)
+
         epoch = 0
         keep_training = True
         max_iteration = int(float((self.config.MAX_ITERS)))
-        total = len(self.train_dataset)
+        total = len(self.train_dataset) // self.config.world_size
 
         if total == 0 and self.global_rank == 0:
             print('No training data was provided! Check \'TRAIN_FLIST\' value in the configuration file.')
@@ -68,15 +70,12 @@ class LaMa():
         while keep_training:
             epoch += 1
             if self.config.DDP:
-                self.train_sampler.set_epoch(epoch)  # Shuffle each epoch
+                self.train_sampler.set_epoch(epoch + 1)  # Shuffle each epoch
             epoch_start = time.time()
             if self.global_rank == 0:
                 print('\n\nTraining epoch: %d' % epoch)
-
-            if self.config.No_Bar:
-                pass
-            else:
-                progbar = Progbar(total, width=20, stateful_metrics=['epoch', 'iter', 'loss_scale'])
+            progbar = Progbar(total, width=20, stateful_metrics=['epoch', 'iter', 'loss_scale'],
+                              verbose=1 if self.global_rank == 0 else 0)
 
             for _, items in enumerate(train_loader):
                 self.inpaint_model.train()
@@ -102,15 +101,15 @@ class LaMa():
                                 values=logs if self.config.VERBOSE else [x for x in logs if not x[0].startswith('l_')])
 
                 # log model at checkpoints
-                if self.config.LOG_INTERVAL and iteration % self.config.LOG_INTERVAL == 0 and self.global_rank == 0:
+                if self.config.LOG_INTERVAL and iteration % self.config.LOG_INTERVAL == 1 and self.global_rank == 0:
                     self.log(logs)
 
                 # sample model at checkpoints
-                if self.config.SAMPLE_INTERVAL and iteration % self.config.SAMPLE_INTERVAL == 0 and self.global_rank == 0:
+                if self.config.SAMPLE_INTERVAL and iteration % self.config.SAMPLE_INTERVAL == 1 and self.global_rank == 0:
                     self.sample()
 
                 # evaluate model at checkpoints
-                if self.config.EVAL_INTERVAL and iteration % self.config.EVAL_INTERVAL == 0:
+                if self.config.EVAL_INTERVAL and iteration % self.config.EVAL_INTERVAL == 1:
                     if self.global_rank == 0:
                         print('\nstart eval...\n')
                         print("Epoch: %d" % epoch)
@@ -138,7 +137,7 @@ class LaMa():
                         }, os.path.join(self.config.PATH, self.inpaint_model.name + '_best_dis.pth'))
 
                 # save model at checkpoints
-                if self.config.SAVE_INTERVAL and iteration % self.config.SAVE_INTERVAL == 0 and self.global_rank == 0:
+                if self.config.SAVE_INTERVAL and iteration % self.config.SAVE_INTERVAL == 1 and self.global_rank == 0:
                     self.save()
             if self.global_rank == 0:
                 print("Epoch: %d, time for one epoch: %d seconds" % (epoch, time.time() - epoch_start))
@@ -275,11 +274,11 @@ class ZITS():
                                             test_mask_path=None, train_line_path=config.train_line_path,
                                             add_pos=config.use_MPE, world_size=config.world_size,
                                             min_sigma=min_sigma, max_sigma=max_sigma, round=round)
-        if config.DDP or config.DP:
+        if config.DDP:
             self.train_sampler = DistributedSampler(self.train_dataset, num_replicas=config.world_size,
                                                     rank=self.global_rank, shuffle=True)
         else:
-            self.train_sampler = RandomSampler(self.train_dataset)
+            self.train_sampler = DistributedSampler(self.train_dataset, num_replicas=1, rank=0, shuffle=True)
         self.val_dataset = DynamicDataset(config.VAL_FLIST, mask_path=None, pos_num=config.rel_pos_num,
                                           batch_size=config.BATCH_SIZE, augment=False, training=False,
                                           test_mask_path=config.TEST_MASK_FLIST, eval_line_path=config.eval_line_path,
@@ -301,7 +300,7 @@ class ZITS():
             self.inpaint_model.save()
 
     def train(self):
-        if self.config.DDP or self.config.DP:
+        if self.config.DDP:
             train_loader = DataLoader(self.train_dataset, shuffle=False, pin_memory=True,
                                       batch_size=self.config.BATCH_SIZE // self.config.world_size,
                                       num_workers=12, sampler=self.train_sampler)

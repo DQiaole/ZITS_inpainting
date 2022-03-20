@@ -12,6 +12,13 @@ Codes and trained models for our CVPR2022 paper ZITS_inpainting will be released
 
 ## Training
 
+python TSR_train.py --nodes 1 --gpus 1 --GPU_ids '0' --AMP
+
+python TSR_train.py --nodes 1 --gpus 1 --GPU_ids '0' --AMP --MaP True
+
+python FTR_train.py --nodes 1 --gpus 1 --GPU_ids '2' --path ./ckpt/lama --config_file ./config_list/config_LAMA.yml --lama
+python FTR_train.py --nodes 1 --gpus 2 --GPU_ids '0,1' --path ./ckpt/places2 --config_file ./config_list/config_LAMA_MPE_places2.yml --DDP
+python FTR_train.py --nodes 1 --gpus 2 --GPU_ids '0,1' --path ./ckpt/places2 --config_file ./config_list/config_LAMA_MPE_HR_places2.yml --DDP
 
 ## More 1K Results
 
