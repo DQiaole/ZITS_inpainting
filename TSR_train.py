@@ -2,12 +2,10 @@ import argparse
 import logging
 import os
 import sys
-
 import torch
 import torch.distributed as dist
-
-from datasets.dataset_TSR import ContinuousEdgeLineDatasetMask
-from src.TSR_trainer import TrainerConfig, TrainerForContinuousEdgeLine
+from datasets.dataset_TSR import ContinuousEdgeLineDatasetMask, ContinuousEdgeLineDatasetMaskFinetune
+from src.TSR_trainer import TrainerConfig, TrainerForContinuousEdgeLine, TrainerForEdgeLineFinetune
 from src.models.TSR_model import EdgeLineGPT256RelBCE, EdgeLineGPTConfig
 from src.utils import set_seed
 
@@ -28,16 +26,22 @@ def main_worker(rank, opts):
     fh.setLevel(logging.DEBUG)
     logger.addHandler(fh)
 
-    # Define the dataset
-    train_dataset = ContinuousEdgeLineDatasetMask(opts.data_path, mask_path=opts.mask_path, is_train=True,
-                                    mask_rates=opts.mask_rates, image_size=opts.image_size)
-    test_dataset = ContinuousEdgeLineDatasetMask(opts.validation_path, test_mask_path=opts.valid_mask_path,
-                                                 is_train=False, image_size=opts.image_size)
-
     # Define the model
     model_config = EdgeLineGPTConfig(embd_pdrop=0.0, resid_pdrop=0.0, n_embd=opts.n_embd, block_size=32,
                                      attn_pdrop=0.0, n_layer=opts.n_layer, n_head=opts.n_head)
     IGPT_model = EdgeLineGPT256RelBCE(model_config)
+
+    # Define the dataset
+    if not opts.MaP:
+        train_dataset = ContinuousEdgeLineDatasetMask(opts.data_path, mask_path=opts.mask_path, is_train=True,
+                                                      mask_rates=opts.mask_rates, image_size=opts.image_size)
+        test_dataset = ContinuousEdgeLineDatasetMask(opts.validation_path, test_mask_path=opts.valid_mask_path,
+                                                     is_train=False, image_size=opts.image_size)
+    else:
+        train_dataset = ContinuousEdgeLineDatasetMaskFinetune(opts.data_path, mask_path=opts.mask_path, is_train=True,
+                                                              mask_rates=opts.mask_rates, image_size=opts.image_size)
+        test_dataset = ContinuousEdgeLineDatasetMaskFinetune(opts.validation_path, test_mask_path=opts.valid_mask_path,
+                                                             is_train=False, image_size=opts.image_size)
 
     iterations_per_epoch = len(train_dataset.image_id_list) // opts.batch_size
     train_epochs = opts.train_epoch
@@ -50,8 +54,12 @@ def main_worker(rank, opts):
                                  world_size=opts.world_size,
                                  AMP=opts.AMP, print_freq=opts.print_freq)
 
-    trainer = TrainerForContinuousEdgeLine(IGPT_model, train_dataset, test_dataset, train_config, gpu, rank,
-                                           iterations_per_epoch, logger=logger)
+    if not opts.MaP:
+        trainer = TrainerForContinuousEdgeLine(IGPT_model, train_dataset, test_dataset, train_config, gpu, rank,
+                                               iterations_per_epoch, logger=logger)
+    else:
+        trainer = TrainerForEdgeLineFinetune(IGPT_model, train_dataset, test_dataset, train_config, gpu, rank,
+                                             iterations_per_epoch, logger=logger)
     loaded_ckpt = trainer.load_checkpoint(opts.resume_ckpt)
     trainer.train(loaded_ckpt)
     print("Finish the training ...")
@@ -73,6 +81,8 @@ if __name__ == '__main__':
     parser.add_argument('--valid_mask_path', type=str, default=None)
     parser.add_argument('--image_size', type=int, default=256, help='input sequence length = image_size*image_size')
     parser.add_argument('--resume_ckpt', type=str, default='latest.pth', help='start from where, the default is latest')
+    # Mask and predict finetune
+    parser.add_argument('--MaP', type=bool, default=False, help='set True when finetune for mask and predict')
     # Define the size of transformer
     parser.add_argument('--n_layer', type=int, default=16)
     parser.add_argument('--n_embd', type=int, default=256)
@@ -99,7 +109,6 @@ if __name__ == '__main__':
     torch.cuda.set_device(rank)
 
     logging.basicConfig(
-        # filename=os.path.join(opts.ckpt_path,'running.log'),
         format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
         datefmt="%m/%d/%Y %H:%M:%S",
         level=logging.INFO,

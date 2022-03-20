@@ -51,7 +51,6 @@ if __name__ == '__main__':
 
         items = test_dataset.__getitem__(it)
 
-        # if opts.greedy:
         edge_pred, line_pred = SampleEdgeLineLogits(IGPT_model, context=[items['img'].unsqueeze(0),
                                                    items['edge'].unsqueeze(0), items['line'].unsqueeze(0)],
                               mask=items['mask'].unsqueeze(0), iterations=opts.iterations)
