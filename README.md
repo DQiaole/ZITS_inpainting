@@ -73,7 +73,7 @@ Test on 512 images:
 ```
 python FTR_inference.py --path ./ckpt/zits_places2_hr --config_file ./config_list/config_ZITS_HR_places2.yml --GPU_ids '0'
 ```
-
+<!--
 ## Training
 
 :warning: Warning: The training codes is not fully tested yet after refactoring
@@ -118,6 +118,8 @@ python FTR_train.py --nodes 1 --gpus 2 --GPU_ids '0,1' --path ./ckpt/places2 \
 python FTR_train.py --nodes 1 --gpus 2 --GPU_ids '0,1' --path ./ckpt/places2 \
 --config_file ./config_list/config_LAMA_MPE_HR_places2.yml --DDP
 ```
+-->
+
 ## More 1K Results
 
 ![](./imgs/supp_highres.jpg)
