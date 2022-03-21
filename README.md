@@ -39,7 +39,7 @@ learned through row-wise and column-wise attentions respectively, then encoded b
     ```
     then complete the environment via
     ```
-    pip install -r requirement.txt
+    pip install -r train_requirement.txt
     ```
 2. Download the pretrained masked wireframe detection model: [LSM-HAWP](https://drive.google.com/drive/folders/1yg4Nc20D34sON0Ni_IOezjJCFHXKGWUW?usp=sharing) ([MST ICCV2021](https://github.com/ewrfcas/MST_inpainting) retrained from [HAWP CVPR2020](https://github.com/cherubicXN/hawp)).
 3. For training, [MST](https://github.com/ewrfcas/MST_inpainting) provide irregular and segmentation masks ([download](https://drive.google.com/drive/folders/1eU6VaTWGdgCXXWueCXilt6oxHdONgUgf?usp=sharing)) with different masking rates. And you should define the mask file list before the training as in [MST](https://github.com/ewrfcas/MST_inpainting).  
@@ -79,7 +79,7 @@ python TSR_train.py --name [exp_name] --data_path [training_data_path] \
 
 #### Training LaMa
 ```
-python FTR_train.py --nodes 1 --gpus 1 --GPU_ids '2' --path ./ckpt/lama \
+python FTR_train.py --nodes 1 --gpus 1 --GPU_ids '0' --path ./ckpt/lama \
 --config_file ./config_list/config_LAMA.yml --lama
 ```
 #### Training FTR
@@ -100,7 +100,7 @@ python FTR_train.py --nodes 1 --gpus 2 --GPU_ids '0,1' --path ./ckpt/places2 \
 ## Acknowledgments
 
 * Some test images from [LaMa](https://github.com/saic-mdal/lama)
-* This repo is built upon [ICT](https://github.com/raywzy/ICT) and [LaMa](https://github.com/saic-mdal/lama).
+* This repo is built upon [MST](https://github.com/ewrfcas/MST_inpainting), [ICT](https://github.com/raywzy/ICT) and [LaMa](https://github.com/saic-mdal/lama).
 ## Cite
 
 If you found our program helpful, please consider citing:

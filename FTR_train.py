@@ -97,5 +97,4 @@ if __name__ == "__main__":
     else:
         args.world_size = 1
 
-    # main_worker(0, args)
     mp.spawn(main_worker, nprocs=args.world_size, args=(args,))

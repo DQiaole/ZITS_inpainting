@@ -1,0 +1,10 @@
+opencv-python==4.5.5.62
+pytorch==1.9.0+cu111
+torchvision==0.10.0+cu111
+numpy==1.20.0
+scikit-image==0.17.2
+pillow==8.1.0
+yaml==0.2.5
+yacs
+pickle
+tqdm
