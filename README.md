@@ -17,17 +17,13 @@ learned through row-wise and column-wise attentions respectively, then encoded b
 
 ## TO DO
 
+- [x] Releasing inference codes.
+- [x] Releasing pre-trained moodel.
 - [ ] Releasing training codes.
-- [ ] Releasing inference codes.
-- [ ] Releasing pre-trained moodel.
 
-## Training
+## Preparation
 
-:warning: Warning: The training codes is not fully tested yet after refactoring
-
-#### Preparation
-
-1. Preparing the training environment:
+1. Preparing the environment:
 
     as there is some bug when using GP loss with DDP, we recommend installing Apex without CUDA extensions via
     ```
@@ -41,21 +37,46 @@ learned through row-wise and column-wise attentions respectively, then encoded b
     ```
     pip install -r train_requirement.txt
     ```
-2. Download the pretrained masked wireframe detection model: [LSM-HAWP](https://drive.google.com/drive/folders/1yg4Nc20D34sON0Ni_IOezjJCFHXKGWUW?usp=sharing) ([MST ICCV2021](https://github.com/ewrfcas/MST_inpainting) retrained from [HAWP CVPR2020](https://github.com/cherubicXN/hawp)).
-3. For training, [MST](https://github.com/ewrfcas/MST_inpainting) provide irregular and segmentation masks ([download](https://drive.google.com/drive/folders/1eU6VaTWGdgCXXWueCXilt6oxHdONgUgf?usp=sharing)) with different masking rates. And you should define the mask file list before the training as in [MST](https://github.com/ewrfcas/MST_inpainting).  
+2. For training, [MST](https://github.com/ewrfcas/MST_inpainting) provide irregular and segmentation masks ([download](https://drive.google.com/drive/folders/1eU6VaTWGdgCXXWueCXilt6oxHdONgUgf?usp=sharing)) with different masking rates. And you should define the mask file list before the training as in [MST](https://github.com/ewrfcas/MST_inpainting).  
+3. Download the pretrained masked wireframe detection model: [LSM-HAWP](https://drive.google.com/drive/folders/1yg4Nc20D34sON0Ni_IOezjJCFHXKGWUW?usp=sharing) ([MST ICCV2021](https://github.com/ewrfcas/MST_inpainting) retrained from [HAWP CVPR2020](https://github.com/cherubicXN/hawp)).
 4. Prepare the wireframs:
     
     as the MST train the LSM-HAWP using Pytorch 1.3.1 and it encounter problem when inference in Pytorch 1.9.1, we should
-    prepare a new environment for inference
+    prepare a new environment for wireframs inference specifically
     ```
-    conda create -n inference_env python=3.6
-    conda activate inference_env
-    pip install -r inference_requirement.txt
+    conda create -n wireframs_inference_env python=3.6
+    conda activate wireframs_inference_env
+    pip install -r wireframs_inference_requirement.txt
     ``` 
    then extracting the wireframs use following code
     ```
     CUDA_VISIBLE_DEVICES=0 python lsm_hawp_inference.py --ckpt_path <best_lsm_hawp.pth> --input_path <input image path> --output_path <output image path>
     ```
+5. Download the pretrained models for perceptual loss,
+ provided by [LaMa](https://github.com/saic-mdal/lama):
+    ```
+    mkdir -p ade20k/ade20k-resnet50dilated-ppm_deepsup/
+    wget -P ade20k/ade20k-resnet50dilated-ppm_deepsup/ http://sceneparsing.csail.mit.edu/model/pytorch/ade20k-resnet50dilated-ppm_deepsup/encoder_epoch_20.pth
+    ```
+   
+## Eval
+For eval, you only need to complete steps 1, 3 and 4 above.
+
+Download the pretrained models on Places2 [here](https://drive.google.com/drive/folders/1Dg_6ZCAi0U3HzrYgXwr9nSaOLnPsf9n-?usp=sharing) to the './ckpt' fold.
+Then modify the config file according to you image, mask and wireframes path.
+
+Test on 256 images:
+```
+python FTR_inference.py --path ./ckpt/zits_places2 --config_file ./config_list/config_ZITS_places2.yml --GPU_ids '0'
+```
+Test on 512 images:
+```
+python FTR_inference.py --path ./ckpt/zits_places2_hr --config_file ./config_list/config_ZITS_HR_places2.yml --GPU_ids '0'
+```
+
+## Training
+
+:warning: Warning: The training codes is not fully tested yet after refactoring
 
 #### Training TSR
 ```
@@ -77,17 +98,21 @@ python TSR_train.py --name [exp_name] --data_path [training_data_path] \
  --gpus 1 --GPU_ids '0' --AMP --MaP
 ```
 
-#### Training LaMa
+#### Training LaMa First
+
 ```
 python FTR_train.py --nodes 1 --gpus 1 --GPU_ids '0' --path ./ckpt/lama \
 --config_file ./config_list/config_LAMA.yml --lama
 ```
+
 #### Training FTR
+
 256:
 ```
 python FTR_train.py --nodes 1 --gpus 2 --GPU_ids '0,1' --path ./ckpt/places2 \
 --config_file ./config_list/config_LAMA_MPE_places2.yml \--DDP
 ```
+
 256~512:
 ```
 python FTR_train.py --nodes 1 --gpus 2 --GPU_ids '0,1' --path ./ckpt/places2 \
@@ -99,8 +124,8 @@ python FTR_train.py --nodes 1 --gpus 2 --GPU_ids '0,1' --path ./ckpt/places2 \
 
 ## Acknowledgments
 
-* Some test images from [LaMa](https://github.com/saic-mdal/lama)
 * This repo is built upon [MST](https://github.com/ewrfcas/MST_inpainting), [ICT](https://github.com/raywzy/ICT) and [LaMa](https://github.com/saic-mdal/lama).
+
 ## Cite
 
 If you found our program helpful, please consider citing:

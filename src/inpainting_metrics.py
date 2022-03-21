@@ -12,6 +12,8 @@ from torch.nn.functional import adaptive_avg_pool2d
 from tqdm import tqdm
 
 from src.models.inception import InceptionV3
+import torch.nn as nn
+import lpips
 
 
 def get_activations(images, model, batch_size=64, dims=2048,
@@ -236,23 +238,46 @@ def get_inpainting_metrics(src, tgt, logger, fid_test=True):
     mse = np.mean(mses)
     mae = np.mean(maes)
 
+    loss_fn_alex = lpips.LPIPS(net='alex').cuda()
+
+    with torch.no_grad():
+        ds = []
+        for im1, im2 in tqdm(zip(input_paths, output_paths)):
+            img1 = lpips.im2tensor(lpips.load_image(im1)).cuda()
+            img2 = lpips.im2tensor(lpips.load_image(im2)).cuda()
+            img2 = torch.nn.functional.interpolate(img2, size=(img1.shape[2], img1.shape[3]), mode='area')
+            d = loss_fn_alex(img1, img2)
+            ds.append(d)
+
+        ds = torch.stack(ds)
+        ds = torch.mean(ds)
+
     # FID
     if fid_test:
         fid = calculate_fid_given_paths([src, tgt], batch_size=16, cuda=True, dims=2048)
         if logger is None:
-            print('\nPSNR:{0:.3f}, SSIM:{1:.3f}, MSE:{2:.6f}, MAE:{3:.6f}, FID:{4:.3f}\n'.format(psnr, ssim, mse, mae,
-                                                                                                 fid))
+            print('\nPSNR:{0:.3f}, SSIM:{1:.3f}, MSE:{2:.6f}, MAE:{3:.6f}, FID:{4:.3f}, LPIPS:{5:.3f}\n'.format(psnr,
+                                                                                                                ssim,
+                                                                                                                mse,
+                                                                                                                mae,
+                                                                                                                fid,
+                                                                                                                ds))
         else:
             logger.info(
-                '\nPSNR:{0:.3f}, SSIM:{1:.3f}, MSE:{2:.6f}, MAE:{3:.6f}, FID:{4:.3f}\n'.format(psnr, ssim, mse, mae,
-                                                                                               fid))
-        return {'psnr': psnr, 'ssim': ssim, 'mse': mse, 'mae': mae, 'fid': fid}
+                '\nPSNR:{0:.3f}, SSIM:{1:.3f}, MSE:{2:.6f}, MAE:{3:.6f}, FID:{4:.3f}, LPIPS:{5:.3f}\n'.format(psnr,
+                                                                                                              ssim, mse,
+                                                                                                              mae,
+                                                                                                              fid, ds))
+        return {'psnr': psnr, 'ssim': ssim, 'mse': mse, 'mae': mae, 'fid': fid, 'lpips': ds}
     else:
         if logger is None:
-            print('\nPSNR:{0:.3f}, SSIM:{1:.3f}, MSE:{2:.6f}, MAE:{3:.6f}\n'.format(psnr, ssim, mse, mae))
+            print('\nPSNR:{0:.3f}, SSIM:{1:.3f}, MSE:{2:.6f}, MAE:{3:.6f}, LPIPS:{4:.3f}\n'.format(psnr, ssim, mse, mae,
+                                                                                                   ds))
         else:
-            logger.info('\nPSNR:{0:.3f}, SSIM:{1:.3f}, MSE:{2:.6f}, MAE:{3:.6f}\n'.format(psnr, ssim, mse, mae))
-        return {'psnr': psnr, 'ssim': ssim, 'mse': mse, 'mae': mae}
+            logger.info(
+                '\nPSNR:{0:.3f}, SSIM:{1:.3f}, MSE:{2:.6f}, MAE:{3:.6f}, LPIPS:{4:.3f}\n'.format(psnr, ssim, mse, mae,
+                                                                                                 ds))
+        return {'psnr': psnr, 'ssim': ssim, 'mse': mse, 'mae': mae, 'lpips': ds}
 
 
 if __name__ == "__main__":

@@ -74,7 +74,7 @@ if __name__ == "__main__":
     parser.add_argument('--gpus', type=int, default=1, help='how many GPUs in one node')
     parser.add_argument('--GPU_ids', type=str, default='0')
     parser.add_argument('--node_rank', type=int, default=0, help='the id of this machine')
-    parser.add_argument('--DDP', action='store_true', help='Automatic Mixed Precision')
+    parser.add_argument('--DDP', action='store_true', help='DDP')
     parser.add_argument('--lama', action='store_true', help='train the lama first')
 
     args = parser.parse_args()

@@ -109,7 +109,7 @@ class LaMa_model(nn.Module):
 
         self.padt = nn.ReflectionPad2d(3)
         self.convt4 = nn.Conv2d(in_channels=64, out_channels=3, kernel_size=7, padding=0)
-        self.act_last = nn.Sigmoid()
+        self.act_last = nn.Tanh()
 
     def forward(self, x, rel_pos_emb=None, direct_emb=None, str_feats=None):
         x = self.pad1(x)
@@ -146,6 +146,7 @@ class LaMa_model(nn.Module):
         x = self.padt(x)
         x = self.convt4(x)
         x = self.act_last(x)
+        x = (x + 1) / 2
         return x
 
 
@@ -193,6 +194,7 @@ class ReZeroFFC(LaMa_model):
         x = self.padt(x)
         x = self.convt4(x)
         x = self.act_last(x)
+        x = (x + 1) / 2
         return x
 
 

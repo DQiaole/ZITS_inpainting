@@ -449,15 +449,12 @@ class DynamicDataset(torch.utils.data.Dataset):
 
     def load_wireframe(self, idx, size):
         selected_img_name = self.data[idx]
-        line_name = selected_img_name.split("/")
-        ns = line_name[-1]
+        line_name = os.path.basename(selected_img_name)
         if self.training is False:
-            line_name[4] = self.eval_line_path
+            line_name = self.eval_line_path + '/' + line_name
         else:
-            line_name[4] = self.train_line_path
-        line_name = line_name[:5] + line_name[6:]  # + [ns]
-        line_name = "/".join(line_name).replace('.png', '.pkl').replace('.jpg', '.pkl')
-        line_name = line_name.replace('/imgs/', '/')
+            line_name = self.train_line_path + '/' + line_name
+        line_name = line_name.replace('.png', '.pkl').replace('.jpg', '.pkl')
 
         wf = pickle.load(open(line_name, 'rb'))
         lmap = np.zeros((size, size))

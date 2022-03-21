@@ -12,7 +12,7 @@ from .utils import Progbar, create_dir, stitch_images, SampleEdgeLineLogits
 
 
 class LaMa:
-    def __init__(self, config, gpu, rank):
+    def __init__(self, config, gpu, rank, test=False):
         self.config = config
         self.device = gpu
         self.global_rank = rank
@@ -22,7 +22,7 @@ class LaMa:
         kwargs = dict(config.training_model)
         kwargs.pop('kind')
 
-        self.inpaint_model = LaMaInpaintingTrainingModule(config, gpu=gpu, rank=rank, **kwargs).to(gpu)
+        self.inpaint_model = LaMaInpaintingTrainingModule(config, gpu=gpu, rank=rank, test=test, **kwargs).to(gpu)
 
         self.train_dataset = ImgDataset(config.TRAIN_FLIST, config.INPUT_SIZE, config.MASK_RATE, config.TRAIN_MASK_FLIST,
                                         augment=True, training=True, test_mask_path=None)
@@ -163,7 +163,7 @@ class LaMa:
             progbar = Progbar(total, width=20, stateful_metrics=['it'])
         iteration = 0
         with torch.no_grad():
-            for items in val_loader:
+            for items in tqdm(val_loader):
                 iteration += 1
                 items['image'] = items['image'].to(self.device)
                 items['mask'] = items['mask'].to(self.device)
@@ -179,14 +179,14 @@ class LaMa:
                 for img_num in range(b):
                     cv2.imwrite(self.val_path + '/' + items['name'][img_num], outputs_merged[img_num, :, :, ::-1])
 
-        our_metric = get_inpainting_metrics(self.val_path, self.config.gt256Val_flist, None, fid_test=True)
+        our_metric = get_inpainting_metrics(self.val_path, self.config.GT_Val_FOLDER, None, fid_test=True)
 
         if self.global_rank == 0:
-            print("iter: %d, PSNR: %f, SSIM: %f, FID: %f" %
+            print("iter: %d, PSNR: %f, SSIM: %f, FID: %f, LPIPS: %f" %
                   (self.inpaint_model.iteration, float(our_metric['psnr']), float(our_metric['ssim']),
-                   float(our_metric['fid'])))
+                   float(our_metric['fid']), float(our_metric['lpips'])))
             logs = [('iter', self.inpaint_model.iteration), ('PSNR', float(our_metric['psnr'])),
-                    ('SSIM', float(our_metric['ssim'])), ('FID', float(our_metric['fid']))]
+                    ('SSIM', float(our_metric['ssim'])), ('FID', float(our_metric['fid'])), ('LPIPS', float(our_metric['lpips']))]
             self.log(logs)
         return float(our_metric['psnr']), float(our_metric['ssim']), float(our_metric['fid'])
 
@@ -243,7 +243,7 @@ class LaMa:
 
 
 class ZITS:
-    def __init__(self, config, gpu, rank):
+    def __init__(self, config, gpu, rank, test=False):
         self.config = config
         self.device = gpu
         self.global_rank = rank
@@ -253,7 +253,7 @@ class ZITS:
         kwargs = dict(config.training_model)
         kwargs.pop('kind')
 
-        self.inpaint_model = DefaultInpaintingTrainingModule(config, gpu=gpu, rank=rank, **kwargs).to(gpu)
+        self.inpaint_model = DefaultInpaintingTrainingModule(config, gpu=gpu, rank=rank, test=test, **kwargs).to(gpu)
 
         if config.min_sigma is None:
             min_sigma = 2.0
@@ -281,7 +281,7 @@ class ZITS:
         self.val_dataset = DynamicDataset(config.VAL_FLIST, mask_path=None, pos_num=config.rel_pos_num,
                                           batch_size=config.BATCH_SIZE, augment=False, training=False,
                                           test_mask_path=config.TEST_MASK_FLIST, eval_line_path=config.eval_line_path,
-                                          add_pos=config.use_MPE, input_size=config.EVAL_SIZE,
+                                          add_pos=config.use_MPE, input_size=config.INPUT_SIZE,
                                           min_sigma=min_sigma, max_sigma=max_sigma)
         self.sample_iterator = self.val_dataset.create_iterator(config.SAMPLE_SIZE)
 
@@ -475,14 +475,15 @@ class ZITS:
                 for img_num in range(b):
                     cv2.imwrite(self.val_path + '/' + items['name'][img_num], outputs_merged[img_num, :, :, ::-1])
 
-        our_metric = get_inpainting_metrics(self.val_path, self.config.gt256Val_flist, None, fid_test=True)
+        our_metric = get_inpainting_metrics(self.val_path, self.config.GT_Val_FOLDER, None, fid_test=True)
 
         if self.global_rank == 0:
-            print("iter: %d, PSNR: %f, SSIM: %f, FID: %f" %
+            print("iter: %d, PSNR: %f, SSIM: %f, FID: %f, LPIPS: %f" %
                   (self.inpaint_model.iteration, float(our_metric['psnr']), float(our_metric['ssim']),
-                   float(our_metric['fid'])))
+                   float(our_metric['fid']), float(our_metric['lpips'])))
             logs = [('iter', self.inpaint_model.iteration), ('PSNR', float(our_metric['psnr'])),
-                    ('SSIM', float(our_metric['ssim'])), ('FID', float(our_metric['fid']))]
+                    ('SSIM', float(our_metric['ssim'])), ('FID', float(our_metric['fid'])),
+                    ('LPIPS', float(our_metric['lpips']))]
             self.log(logs)
         return float(our_metric['psnr']), float(our_metric['ssim']), float(our_metric['fid'])
 

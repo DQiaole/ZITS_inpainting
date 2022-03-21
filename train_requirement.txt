@@ -8,3 +8,4 @@ yaml==0.2.5
 yacs
 pickle
 tqdm
+lpips

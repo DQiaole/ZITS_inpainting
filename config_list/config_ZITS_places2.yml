@@ -4,34 +4,33 @@ No_Bar: False        # Turn off the progressive bar
 use_MPE: True
 rel_pos_num: 128
 str_size: 256
-EVAL_SIZE: 256
 min_sigma: 3.0
 max_sigma: 3.75
 round: 64
 rezero_for_mpe: True
 fix_256: True
 
-transformer_ckpt_path: './ckpt/best_transformer.pth'
-gen_weights_path0: './ckpt/LAMA_places2/InpaintingModel_gen.pth'
-dis_weights_path0: './ckpt/LAMA_places2/InpaintingModel_dis.pth'
-structure_upsample_path: './ckpt/StructureUpsampling_V5_last.pth'
-
-train_line_path: "places2_train_wireframes"
-eval_line_path: "places2_val_wireframes"
-
-TRAIN_FLIST: places365_standard/places2_all/train_list.txt
-VAL_FLIST: places365_standard/places2_all/test_sub_list.txt
-TEST_FLIST: places365_standard/places2_all/test_sub_list.txt
-
-gt256Val_flist: 'places365_standard/val_256img_for_eval'
-gt256test_flist: 'places365_standard/val_256img_for_eval'
-
-TRAIN_MASK_FLIST: [ 'irregular_mask/irregular_mask_list.txt',
-                    'coco_mask/coco_mask_list.txt' ]
+transformer_ckpt_path: './ckpt/best_transformer_places2.pth'
+gen_weights_path0: './ckpt/lama_places2/InpaintingModel_gen.pth'   # Not required at the time of eval
+dis_weights_path0: './ckpt/lama_places2/InpaintingModel_dis.pth'   # Not required at the time of eval
+structure_upsample_path: './ckpt/StructureUpsampling.pth'
+###########################
+# modify the line path
+train_line_path: "./places2_train_wireframes"
+eval_line_path: "./places2_val_wireframes"
+# modify the image path
+TRAIN_FLIST: /home/wmlce/places365_standard/places2_all/train_list.txt
+VAL_FLIST: /home/wmlce/places365_standard/places2_all/test_sub_list.txt
+TEST_FLIST: /home/wmlce/places365_standard/places2_all/test_sub_list.txt
+# set the GT images folder for metrics computation
+GT_Val_FOLDER: '/home/wmlce/places365_standard/val_256img_for_eval'
+# modify the mask path
+TRAIN_MASK_FLIST: [ '/home/wmlce/irregular_mask/irregular_mask_list.txt',
+                    '/home/wmlce/coco_mask/coco_mask_list.txt' ]
 MASK_RATE: [0.4, 0.8, 1.0]
-TEST_MASK_FLIST: /test_mask
+TEST_MASK_FLIST: /home/wmlce/Image-Transformer-Inpainting/data/indoor/test_mask
 
-BATCH_SIZE: 30                 # input batch size for training
+BATCH_SIZE: 32                 # input batch size for training
 INPUT_SIZE: 256               # input image size for training 0 for original size
 START_ITERS: 800000             # start iters for lama
 MIX_ITERS: 808000                # gradually mix the edge and line with prediction from transformer
@@ -63,7 +62,7 @@ losses:
     weight: 100
   resnet_pl:
     weight: 30
-    weights_path: './'
+    weights_path: './'   # path to ade20k pretrained perceptual loss model provided by LaMa
 optimizers:
   warmup_steps: 2000
   generator:

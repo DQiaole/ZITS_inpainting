@@ -32,20 +32,21 @@ def add_prefix_to_keys(dct, prefix):
 
 
 class LaMaBaseInpaintingTrainingModule(nn.Module):
-    def __init__(self, config, gpu, name, rank, *args, predict_only=False, **kwargs):
+    def __init__(self, config, gpu, name, rank, *args, test=False, **kwargs):
         super().__init__(*args, **kwargs)
         print('BaseInpaintingTrainingModule init called')
         self.global_rank = rank
         self.config = config
         self.iteration = 0
         self.name = name
+        self.test = test
         self.gen_weights_path = os.path.join(config.PATH, name + '_gen.pth')
         self.dis_weights_path = os.path.join(config.PATH, name + '_dis.pth')
 
         self.generator = LaMa_model().cuda(gpu)
         self.best = None
 
-        if not predict_only:
+        if not test:
             self.discriminator = NLayerDiscriminator(**self.config.discriminator).cuda(gpu)
             self.adversarial_loss = NonSaturatingWithR1(**self.config.losses['adversarial'])
             self.generator_average = None
@@ -63,7 +64,7 @@ class LaMaBaseInpaintingTrainingModule(nn.Module):
                 self.loss_resnet_pl = ResNetPL(**self.config.losses['resnet_pl'])
             else:
                 self.loss_resnet_pl = None
-        self.gen_optimizer, self.dis_optimizer = self.configure_optimizers()
+            self.gen_optimizer, self.dis_optimizer = self.configure_optimizers()
         if self.config.AMP:  # use AMP
             self.scaler = torch.cuda.amp.GradScaler()
 
@@ -76,7 +77,17 @@ class LaMaBaseInpaintingTrainingModule(nn.Module):
             self.discriminator = apex.parallel.DistributedDataParallel(self.discriminator)
 
     def load(self):
-        if os.path.exists(self.gen_weights_path):
+        if self.test:
+            self.gen_weights_path = os.path.join(self.config.PATH, self.name + '_best_gen.pth')
+            print('Loading %s generator...' % self.name)
+            if torch.cuda.is_available():
+                data = torch.load(self.gen_weights_path)
+            else:
+                data = torch.load(self.gen_weights_path, map_location=lambda storage, loc: storage)
+
+            self.generator.load_state_dict(data['generator'])
+
+        if not self.test and os.path.exists(self.gen_weights_path):
             print('Loading %s generator...' % self.name)
 
             if torch.cuda.is_available():
@@ -100,7 +111,7 @@ class LaMaBaseInpaintingTrainingModule(nn.Module):
             print('Warnning: There is no previous optimizer found. An initialized optimizer will be used.')
 
         # load discriminator only when training
-        if (self.config.MODE == 1 or self.config.score) and os.path.exists(self.dis_weights_path):
+        if not self.test and os.path.exists(self.dis_weights_path):
             print('Loading %s discriminator...' % self.name)
 
             if torch.cuda.is_available():
@@ -135,15 +146,16 @@ class LaMaBaseInpaintingTrainingModule(nn.Module):
 
 
 class BaseInpaintingTrainingModule(nn.Module):
-    def __init__(self, config, gpu, name, rank, *args, predict_only=False, **kwargs):
+    def __init__(self, config, gpu, name, rank, *args, test=False, **kwargs):
         super().__init__(*args, **kwargs)
         print('BaseInpaintingTrainingModule init called')
         self.global_rank = rank
         self.config = config
         self.iteration = 0
         self.name = name
-        self.gen_weights_path = os.path.join(config.PATH, name + '_gen_HR.pth')
-        self.dis_weights_path = os.path.join(config.PATH, name + '_dis_HR.pth')
+        self.test = test
+        self.gen_weights_path = os.path.join(config.PATH, name + '_gen.pth')
+        self.dis_weights_path = os.path.join(config.PATH, name + '_dis.pth')
 
         self.str_encoder = StructureEncoder(config).cuda(gpu)
         self.generator = ReZeroFFC(config).cuda(gpu)
@@ -166,7 +178,7 @@ class BaseInpaintingTrainingModule(nn.Module):
         self.transformer.cuda(gpu).eval()
         self.transformer.half()
 
-        if not predict_only:
+        if not test:
             self.discriminator = NLayerDiscriminator(**self.config.discriminator).cuda(gpu)
             self.adversarial_loss = NonSaturatingWithR1(**self.config.losses['adversarial'])
             self.generator_average = None
@@ -184,33 +196,31 @@ class BaseInpaintingTrainingModule(nn.Module):
                 self.loss_resnet_pl = ResNetPL(**self.config.losses['resnet_pl'])
             else:
                 self.loss_resnet_pl = None
-        self.gen_optimizer, self.dis_optimizer = self.configure_optimizers()
-        self.str_optimizer = torch.optim.Adam(self.str_encoder.parameters(), lr=config.optimizers['generator']['lr'])
+            self.gen_optimizer, self.dis_optimizer = self.configure_optimizers()
+            self.str_optimizer = torch.optim.Adam(self.str_encoder.parameters(), lr=config.optimizers['generator']['lr'])
         if self.config.AMP:  # use AMP
             self.scaler = torch.cuda.amp.GradScaler()
-
-        self.load_rezero()  # load pretrain model
+        if not test:
+            self.load_rezero()  # load pretrain model
         self.load()  # reload for restore
 
         # reset lr
-        for group in self.gen_optimizer.param_groups:
-            group['lr'] = config.optimizers['generator']['lr']
-            group['initial_lr'] = config.optimizers['generator']['lr']
-        for group in self.dis_optimizer.param_groups:
-            group['lr'] = config.optimizers['discriminator']['lr']
-            group['initial_lr'] = config.optimizers['discriminator']['lr']
+        if not test:
+            for group in self.gen_optimizer.param_groups:
+                group['lr'] = config.optimizers['generator']['lr']
+                group['initial_lr'] = config.optimizers['generator']['lr']
+            for group in self.dis_optimizer.param_groups:
+                group['lr'] = config.optimizers['discriminator']['lr']
+                group['initial_lr'] = config.optimizers['discriminator']['lr']
 
-        if self.config.DDP:
+        if self.config.DDP and not test:
             import apex
             self.generator = apex.parallel.convert_syncbn_model(self.generator)
             self.discriminator = apex.parallel.convert_syncbn_model(self.discriminator)
             self.generator = apex.parallel.DistributedDataParallel(self.generator)
             self.discriminator = apex.parallel.DistributedDataParallel(self.discriminator)
-        elif self.config.DP:
-            self.generator = DataParallel(self.generator)
-            self.discriminator = DataParallel(self.discriminator)
 
-        if self.config.optimizers['decay_steps'] is not None and self.config.optimizers['decay_steps'] > 0:
+        if self.config.optimizers['decay_steps'] is not None and self.config.optimizers['decay_steps'] > 0 and not test:
             self.g_scheduler = torch.optim.lr_scheduler.StepLR(self.gen_optimizer, config.optimizers['decay_steps'],
                                                                gamma=config.optimizers['decay_rate'])
             self.d_scheduler = torch.optim.lr_scheduler.StepLR(self.dis_optimizer, config.optimizers['decay_steps'],
@@ -249,7 +259,13 @@ class BaseInpaintingTrainingModule(nn.Module):
             print('Warnning: There is no previous optimizer found. An initialized optimizer will be used.')
 
     def load(self):
-        if os.path.exists(self.gen_weights_path):
+        if self.test:
+            self.gen_weights_path = os.path.join(self.config.PATH, self.name + '_best_gen.pth')
+            print('Loading %s generator...' % self.name)
+            data = torch.load(self.gen_weights_path, map_location='cpu')
+            self.generator.load_state_dict(data['generator'])
+            self.str_encoder.load_state_dict(data['str_encoder'])
+        if not self.test and os.path.exists(self.gen_weights_path):
             print('Loading %s generator...' % self.name)
             data = torch.load(self.gen_weights_path, map_location='cpu')
             self.generator.load_state_dict(data['generator'])
@@ -267,7 +283,7 @@ class BaseInpaintingTrainingModule(nn.Module):
             print('Warnning: There is no previous optimizer found. An initialized optimizer will be used.')
 
         # load discriminator only when training
-        if (self.config.MODE == 1 or self.config.score) and os.path.exists(self.dis_weights_path):
+        if not self.test and os.path.exists(self.dis_weights_path):
             print('Loading %s discriminator...' % self.name)
             data = torch.load(self.dis_weights_path, map_location='cpu')
             self.dis_optimizer.load_state_dict(data['optimizer'])
@@ -301,8 +317,8 @@ class BaseInpaintingTrainingModule(nn.Module):
 
 
 class LaMaInpaintingTrainingModule(LaMaBaseInpaintingTrainingModule):
-    def __init__(self, *args, gpu, rank, image_to_discriminator='predicted_image', **kwargs):
-        super().__init__(*args, gpu=gpu, name='InpaintingModel', rank=rank, **kwargs)
+    def __init__(self, *args, gpu, rank, image_to_discriminator='predicted_image', test=False, **kwargs):
+        super().__init__(*args, gpu=gpu, name='InpaintingModel', rank=rank, test=test, **kwargs)
         self.image_to_discriminator = image_to_discriminator
         self.refine_mask_for_losses = None
 
@@ -408,8 +424,8 @@ class LaMaInpaintingTrainingModule(LaMaBaseInpaintingTrainingModule):
 
 
 class DefaultInpaintingTrainingModule(BaseInpaintingTrainingModule):
-    def __init__(self, *args, gpu, rank, image_to_discriminator='predicted_image', **kwargs):
-        super().__init__(*args, gpu=gpu, name='InpaintingModel', rank=rank, **kwargs)
+    def __init__(self, *args, gpu, rank, image_to_discriminator='predicted_image', test=False, **kwargs):
+        super().__init__(*args, gpu=gpu, name='InpaintingModel', rank=rank, test=test, **kwargs)
         self.image_to_discriminator = image_to_discriminator
         if self.config.AMP:  # use AMP
             self.scaler = torch.cuda.amp.GradScaler()
