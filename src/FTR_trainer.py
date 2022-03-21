@@ -11,7 +11,7 @@ from .inpainting_metrics import get_inpainting_metrics
 from .utils import Progbar, create_dir, stitch_images, SampleEdgeLineLogits
 
 
-class LaMa():
+class LaMa:
     def __init__(self, config, gpu, rank):
         self.config = config
         self.device = gpu
@@ -24,14 +24,14 @@ class LaMa():
 
         self.inpaint_model = LaMaInpaintingTrainingModule(config, gpu=gpu, rank=rank, **kwargs).to(gpu)
 
-        self.train_dataset = ImgDataset(config, config.TRAIN_FLIST, config.TRAIN_MASK_FLIST, augment=True,
-                                        training=True, test_mask_path=None)
+        self.train_dataset = ImgDataset(config.TRAIN_FLIST, config.INPUT_SIZE, config.MASK_RATE, config.TRAIN_MASK_FLIST,
+                                        augment=True, training=True, test_mask_path=None)
         if config.DDP:
             self.train_sampler = DistributedSampler(self.train_dataset, num_replicas=config.world_size,
                                                     rank=self.global_rank, shuffle=True)
-        else:
-            self.train_sampler = DistributedSampler(self.train_dataset, num_replicas=1, rank=0, shuffle=True)
-        self.val_dataset = ImgDataset(config, config.VAL_FLIST, mask_path=None, augment=False,
+        # else:
+        #     self.train_sampler = DistributedSampler(self.train_dataset, num_replicas=1, rank=0, shuffle=True)
+        self.val_dataset = ImgDataset(config.VAL_FLIST, config.INPUT_SIZE, mask_rates=None, mask_path=None, augment=False,
                                       training=False, test_mask_path=config.TEST_MASK_FLIST)
         self.sample_iterator = self.val_dataset.create_iterator(config.SAMPLE_SIZE)
 
@@ -55,8 +55,7 @@ class LaMa():
                                       num_workers=12, sampler=self.train_sampler)
         else:
             train_loader = DataLoader(self.train_dataset, pin_memory=True,
-                                      batch_size=self.config.BATCH_SIZE, num_workers=12,
-                                      sampler=self.train_sampler)
+                                      batch_size=self.config.BATCH_SIZE, num_workers=12, shuffle=True)
 
         epoch = 0
         keep_training = True
@@ -243,7 +242,7 @@ class LaMa():
         return img.int()
 
 
-class ZITS():
+class ZITS:
     def __init__(self, config, gpu, rank):
         self.config = config
         self.device = gpu

@@ -18,7 +18,7 @@ def to_int(x):
 
 
 class ImgDataset(torch.utils.data.Dataset):
-    def __init__(self, config, flist, mask_path=None, augment=True, training=True, test_mask_path=None):
+    def __init__(self, flist, input_size, mask_rates=None, mask_path=None, augment=True, training=True, test_mask_path=None):
         super(ImgDataset, self).__init__()
         self.augment = augment
         self.training = training
@@ -44,8 +44,8 @@ class ImgDataset(torch.utils.data.Dataset):
         else:
             self.mask_list = glob.glob(test_mask_path + '/*')
             self.mask_list = sorted(self.mask_list, key=lambda x: x.split('/')[-1])
-        self.input_size = config.INPUT_SIZE
-        self.config = config
+        self.input_size = input_size
+        self.mask_rates = mask_rates
 
     def __len__(self):
         return len(self.data)
@@ -94,11 +94,11 @@ class ImgDataset(torch.utils.data.Dataset):
             return mask
         else:  # train mode: 40% mask with random brush, 40% mask with coco mask, 20% with additions
             rdv = random.random()
-            if rdv < self.config.MASK_RATE[0]:
+            if rdv < self.mask_rates[0]:
                 mask_index = random.randint(0, len(self.irregular_mask_list) - 1)
                 mask = cv2.imread(self.irregular_mask_list[mask_index],
                                   cv2.IMREAD_GRAYSCALE)
-            elif rdv < self.config.MASK_RATE[1]:
+            elif rdv < self.mask_rates[1]:
                 mask_index = random.randint(0, len(self.segment_mask_list) - 1)
                 mask = cv2.imread(self.segment_mask_list[mask_index],
                                   cv2.IMREAD_GRAYSCALE)
