@@ -48,7 +48,7 @@ def get_junctions(jloc, joff, topk=300, th=0):
     joff = joff.reshape(2, -1)
 
     scores, index = torch.topk(jloc, k=topk)
-    y = (index / width).float() + torch.gather(joff[1], 0, index) + 0.5
+    y = (index // width).float() + torch.gather(joff[1], 0, index) + 0.5
     x = (index % width).float() + torch.gather(joff[0], 0, index) + 0.5
 
     junctions = torch.stack((x, y)).t()
