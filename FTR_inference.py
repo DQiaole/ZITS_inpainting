@@ -9,7 +9,7 @@ import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
 
-from src.FTR_trainer import ZITS, LaMa
+from src.FTR_trainer import ZITS
 from src.config import Config
 
 
@@ -46,10 +46,7 @@ def main_worker(gpu, args):
     random.seed(config.SEED)
 
     # build the model and load the best model for eval
-    if args.lama:
-        model = LaMa(config, gpu, rank, True)
-    else:
-        model = ZITS(config, gpu, rank, True)
+    model = ZITS(config, gpu, rank, True)
 
     # model eval
     if rank == 0:
@@ -69,7 +66,6 @@ if __name__ == "__main__":
     parser.add_argument('--GPU_ids', type=str, default='0')
     parser.add_argument('--node_rank', type=int, default=0, help='the id of this machine')
     parser.add_argument('--DDP', action='store_true', help='DDP')
-    parser.add_argument('--lama', action='store_true', help='train the lama first')
 
     args = parser.parse_args()
     config_path = os.path.join(args.path, 'config.yml')

@@ -36,10 +36,10 @@ learned through row-wise and column-wise attentions respectively, then encoded b
     pip install -v --disable-pip-version-check --no-cache-dir --global-option="--cpp_ext" ./
     ```
 2. For training, [MST](https://github.com/ewrfcas/MST_inpainting) provide irregular and segmentation masks ([download](https://drive.google.com/drive/folders/1eU6VaTWGdgCXXWueCXilt6oxHdONgUgf?usp=sharing)) with different masking rates. And you should define the mask file list before the training as in [MST](https://github.com/ewrfcas/MST_inpainting).  
-3. Download the pretrained masked wireframe detection model: [LSM-HAWP](https://drive.google.com/drive/folders/1yg4Nc20D34sON0Ni_IOezjJCFHXKGWUW?usp=sharing) ([MST ICCV2021](https://github.com/ewrfcas/MST_inpainting) retrained from [HAWP CVPR2020](https://github.com/cherubicXN/hawp)).
+3. Download the pretrained masked wireframe detection model to the './ckpt' fold.: [LSM-HAWP](https://drive.google.com/drive/folders/1yg4Nc20D34sON0Ni_IOezjJCFHXKGWUW?usp=sharing) ([MST ICCV2021](https://github.com/ewrfcas/MST_inpainting) retrained from [HAWP CVPR2020](https://github.com/cherubicXN/hawp)).
 4. Prepare the wireframs:
     
-    as the MST train the LSM-HAWP using Pytorch 1.3.1 and it encounter problem when inference in Pytorch 1.9.1, we should
+    as the MST train the LSM-HAWP using Pytorch 1.3.1 and it encounter [problem](https://github.com/cherubicXN/hawp/issues/31) when inference in Pytorch 1.9.1, we should
     prepare a new environment for wireframs inference specifically
     ```
     conda create -n wireframs_inference_env python=3.6
@@ -58,19 +58,34 @@ learned through row-wise and column-wise attentions respectively, then encoded b
     ```
    
 ## Eval
-For eval, you only need to complete steps 1, 3 and 4 above.
+
+#### Batch Test
+For batch eval, you need to complete steps 1, 3 and 4 above.
 
 Download the pretrained models on Places2 [here](https://drive.google.com/drive/folders/1Dg_6ZCAi0U3HzrYgXwr9nSaOLnPsf9n-?usp=sharing) to the './ckpt' fold.
 Then modify the config file according to you image, mask and wireframes path.
 
 Test on 256 images:
 ```
+conda activate train_env
 python FTR_inference.py --path ./ckpt/zits_places2 --config_file ./config_list/config_ZITS_places2.yml --GPU_ids '0'
 ```
 Test on 512 images:
 ```
+conda activate train_env
 python FTR_inference.py --path ./ckpt/zits_places2_hr --config_file ./config_list/config_ZITS_HR_places2.yml --GPU_ids '0'
 ```
+
+#### Single Image Test
+
+Note: For single image test, we need use environment 'wireframs_inference_env' as we will extract the line during the process.
+
+```
+conda activate wireframs_inference_env
+python single_image_test.py --path <ckpt_path> --config_file <config_path> \
+ --GPU_ids '0' --img_path ./image.png --mask_path ./mask.png --save_path ./
+```
+
 <!--
 ## Training
 
