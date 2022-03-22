@@ -25,12 +25,12 @@ learned through row-wise and column-wise attentions respectively, then encoded b
 
 1. Preparing the environment:
 
-    as there is some bug when using [GP loss with DDP](https://github.com/pytorch/pytorch/issues/47562), we recommend installing Apex without CUDA extensions via
+    as there are some bugs when using [GP loss with DDP](https://github.com/pytorch/pytorch/issues/47562), we strongly recommend installing Apex without CUDA extensions via torch1.9.0 for the multi-gpu training
     ```
     conda create -n train_env python=3.6
     conda activate train_env
     pip install torch==1.9.0+cu111 torchvision==0.10.0+cu111 torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html
-    pip install -r train_requirement.txt
+    pip install -r requirement.txt
     git clone https://github.com/NVIDIA/apex
     cd apex
     pip install -v --disable-pip-version-check --no-cache-dir --global-option="--cpp_ext" ./
@@ -39,18 +39,18 @@ learned through row-wise and column-wise attentions respectively, then encoded b
 3. Download the pretrained masked wireframe detection model to the './ckpt' fold.: [LSM-HAWP](https://drive.google.com/drive/folders/1yg4Nc20D34sON0Ni_IOezjJCFHXKGWUW?usp=sharing) ([MST ICCV2021](https://github.com/ewrfcas/MST_inpainting) retrained from [HAWP CVPR2020](https://github.com/cherubicXN/hawp)).
 4. Prepare the wireframs:
     
-    as the MST train the LSM-HAWP using Pytorch 1.3.1 and it encounter [problem](https://github.com/cherubicXN/hawp/issues/31) when inference in Pytorch 1.9.1, we should
-    prepare a new environment for wireframs inference specifically
+    as the MST train the LSM-HAWP in Pytorch 1.3.1 and it causes [problem](https://github.com/cherubicXN/hawp/issues/31) when tested in Pytorch 1.9, we recommand to inference the lines(wireframes) with torch==1.3.1. If the line detection is not based on torch1.3.1, the performance may drop a little. 
     ```
     conda create -n wireframs_inference_env python=3.6
     conda activate wireframs_inference_env
-    pip install -r wireframs_inference_requirement.txt
+    pip install torch==1.3.1 torchvision==0.4.2
+   pip install -r requirement.txt
     ``` 
    then extracting the wireframs use following code
     ```
-    CUDA_VISIBLE_DEVICES=0 python lsm_hawp_inference.py --ckpt_path <best_lsm_hawp.pth> --input_path <input image path> --output_path <output image path>
+    python lsm_hawp_inference.py --ckpt_path <best_lsm_hawp.pth> --input_path <input image path> --output_path <output image path> --gpu_ids '0'
     ```
-5. Download the pretrained models for perceptual loss,
+5. If you need to train the model, please download the pretrained models for perceptual loss,
  provided by [LaMa](https://github.com/saic-mdal/lama):
     ```
     mkdir -p ade20k/ade20k-resnet50dilated-ppm_deepsup/
@@ -60,7 +60,7 @@ learned through row-wise and column-wise attentions respectively, then encoded b
 ## Eval
 
 #### Batch Test
-For batch eval, you need to complete steps 1, 3 and 4 above.
+For batch eval, you need to complete steps 3 and 4 above.
 
 Download the pretrained models on Places2 [here](https://drive.google.com/drive/folders/1Dg_6ZCAi0U3HzrYgXwr9nSaOLnPsf9n-?usp=sharing) to the './ckpt' fold.
 Then modify the config file according to you image, mask and wireframes path.
@@ -78,7 +78,7 @@ python FTR_inference.py --path ./ckpt/zits_places2_hr --config_file ./config_lis
 
 #### Single Image Test
 
-Note: For single image test, we need use environment 'wireframs_inference_env' as we will extract the line during the process.
+Note: For single image test, environment 'wireframs_inference_env' in step 4 is recommended for a better line detection.
 
 ```
 conda activate wireframs_inference_env

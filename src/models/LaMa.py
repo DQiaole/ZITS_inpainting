@@ -1,6 +1,5 @@
 import numpy as np
-import torch
-from torch import nn
+
 from .ffc import *
 from .layers import *
 

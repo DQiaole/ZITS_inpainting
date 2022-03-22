@@ -10,7 +10,8 @@ from src.lsm_hawp.detector import WireframeDetector
 from src.FTR_trainer import ZITS
 from src.config import Config
 from skimage.color import rgb2gray
-import torchvision.transforms.functional as F
+import torchvision.transforms.functional as FF
+import torch.nn.functional as F
 from skimage.feature import canny
 import skimage
 from src.utils import stitch_images, SampleEdgeLineLogits
@@ -100,13 +101,13 @@ def resize(img, height, width, center_crop=False):
 
 def to_tensor(img, norm=False):
     # img = Image.fromarray(img)
-    img_t = F.to_tensor(img).float()
+    img_t = FF.to_tensor(img).float()
     if norm:
-        img_t = F.normalize(img_t, mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+        img_t = FF.normalize(img_t, mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
     return img_t
 
 
-def load_image(img_path, mask_path, sigma256=3.0, sigma=3.75):
+def load_image(img_path, mask_path, sigma256=3.0):
     img = cv2.imread(img_path)
     img = img[:, :, ::-1]
     # img = resize(img, input_size, input_size)
@@ -120,8 +121,6 @@ def load_image(img_path, mask_path, sigma256=3.0, sigma=3.75):
     mask_512 = cv2.resize(mask, (512, 512), interpolation=cv2.INTER_AREA)
     mask_512[mask_512 > 0] = 255
 
-    gray = rgb2gray(img)
-    edge = canny(gray, sigma=sigma, mask=None).astype(np.float)
     gray_256 = rgb2gray(img_256)
     edge_256 = canny(gray_256, sigma=sigma256, mask=None).astype(np.float)
 
@@ -136,7 +135,6 @@ def load_image(img_path, mask_path, sigma256=3.0, sigma=3.75):
     batch['mask'] = to_tensor(mask).unsqueeze(0)
     batch['mask_256'] = to_tensor(mask_256).unsqueeze(0)
     batch['mask_512'] = to_tensor(mask_512).unsqueeze(0)
-    batch['edge'] = to_tensor(edge).unsqueeze(0)
     batch['edge_256'] = to_tensor(edge_256).unsqueeze(0)
     batch['img_512'] = to_tensor(img_512).unsqueeze(0)
     batch['rel_pos'] = torch.LongTensor(rel_pos).unsqueeze(0)
@@ -166,7 +164,7 @@ def wf_inference_test(wf, images, h, w, masks, obj_remove=True, valid_th=0.925, 
     with torch.no_grad():
         images = images * 255.
         origin_masks = masks
-        masks = torch.nn.functional.interpolate(masks, size=(images.shape[2], images.shape[3]), mode='nearest')
+        masks = F.interpolate(masks, size=(images.shape[2], images.shape[3]), mode='nearest')
         # the mask value of lcnn is 127.5
         masked_images = images * (1 - masks) + torch.ones_like(images) * masks * 127.5
         images = (images - lcnn_mean) / lcnn_std
@@ -191,7 +189,7 @@ def wf_inference_test(wf, images, h, w, masks, obj_remove=True, valid_th=0.925, 
                                 for line in lines_nomask]
                 scores_nomask = output_nomask['lines_score'].numpy()
 
-            output_masked =wf(masked_images[i].unsqueeze(0))
+            output_masked = wf(masked_images[i].unsqueeze(0))
             output_masked = to_device(output_masked, 'cpu')
             if output_masked['num_proposals'] == 0:
                 lines_masked = []
@@ -229,28 +227,22 @@ def wf_inference_test(wf, images, h, w, masks, obj_remove=True, valid_th=0.925, 
     return lines_tensor.detach().to(0)
 
 
-def test(model, wf, img_path, mask_path, save_path, valid_th, sigma256=3.0, sigma=3.75):
-    items = load_image(img_path, mask_path, sigma256, sigma)
+def test(model, wf, img_path, mask_path, save_path, valid_th, sigma256=3.0):
+    items = load_image(img_path, mask_path, sigma256)
     input_size = min(items['h'], items['w'])
     line = wf_inference_test(wf, items['img_512'].cuda(), h=256, w=256, masks=items['mask_512'].cuda(),
-                                  valid_th=valid_th, mask_th=valid_th)
+                             valid_th=valid_th, mask_th=valid_th)
     items['line_256'] = line
 
     with torch.no_grad():
         for k in items:
             if type(items[k]) is torch.Tensor:
                 items[k] = items[k].to(0)
-        b, _, _, _ = items['edge'].shape
         edge_pred, line_pred = SampleEdgeLineLogits(model.inpaint_model.transformer,
-                                                    context=[items['img_256'][:b, ...],
-                                                             items['edge_256'][:b, ...],
-                                                             items['line_256'][:b, ...]],
-                                                    mask=items['mask_256'][:b, ...].clone(),
-                                                    iterations=5,
-                                                    add_v=0.05, mul_v=4,
-                                                    device=0)
-        edge_pred, line_pred = edge_pred[:b, ...].detach().to(torch.float32), \
-                               line_pred[:b, ...].detach().to(torch.float32)
+                                                    context=[items['img_256'], items['edge_256'], items['line_256']],
+                                                    mask=items['mask_256'].clone(), iterations=5,
+                                                    add_v=0.05, mul_v=4, device=0)
+        edge_pred, line_pred = edge_pred.detach().to(torch.float32), line_pred.detach().to(torch.float32)
         if input_size != 256 and input_size > 256:
             while edge_pred.shape[2] < input_size:
                 edge_pred = model.inpaint_model.structure_upsample(edge_pred)[0]
@@ -259,10 +251,8 @@ def test(model, wf, img_path, mask_path, save_path, valid_th, sigma256=3.0, sigm
                 line_pred = model.inpaint_model.structure_upsample(line_pred)[0]
                 line_pred = torch.sigmoid((line_pred + 2) * 2)
 
-            edge_pred = torch.nn.functional.interpolate(edge_pred, size=(input_size, input_size), mode='bilinear',
-                                      align_corners=False)
-            line_pred = torch.nn.functional.interpolate(line_pred, size=(input_size, input_size), mode='bilinear',
-                                      align_corners=False)
+            edge_pred = F.interpolate(edge_pred, size=(input_size, input_size), mode='bilinear', align_corners=False)
+            line_pred = F.interpolate(line_pred, size=(input_size, input_size), mode='bilinear', align_corners=False)
         elif input_size < 256:
             print('input size must >= 256!')
             raise NotImplementedError
@@ -333,8 +323,6 @@ if __name__ == "__main__":
     print("load HAWP")
     wf = WireframeDetector(is_cuda=True)
     wf = wf.to(0)
-    wf.load_state_dict(torch.load('./ckpt/best_lsm_hawp.pth',
-                                  map_location='cpu')['model'])
+    wf.load_state_dict(torch.load('./ckpt/best_lsm_hawp.pth', map_location='cpu')['model'])
     wf.eval()
-    test(model, wf, args.img_path, args.mask_path, args.save_path, 0.85, sigma256=3.0, sigma=3.75)
-
+    test(model, wf, args.img_path, args.mask_path, args.save_path, 0.85, sigma256=3.0)

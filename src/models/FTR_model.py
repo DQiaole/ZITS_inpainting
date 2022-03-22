@@ -1,8 +1,5 @@
 import os
 
-import torch
-from torch.nn import DataParallel
-
 from src.losses.adversarial import NonSaturatingWithR1
 from src.losses.feature_matching import masked_l1_loss, feature_matching_loss
 from src.losses.perceptual import ResNetPL
