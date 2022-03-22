@@ -1,0 +1,97 @@
+SEED: 3407            # random seed
+No_Bar: False        # Turn off the progressive bar
+
+use_MPE: True
+rel_pos_num: 128
+str_size: 256
+min_sigma: 3.0
+max_sigma: 3.75
+round: 64
+rezero_for_mpe: True
+fix_256: True
+
+transformer_ckpt_path: './ckpt/best_transformer_places2.pth'
+gen_weights_path0: './ckpt/lama_places2/InpaintingModel_gen.pth'   # Not required at the time of eval
+dis_weights_path0: './ckpt/lama_places2/InpaintingModel_dis.pth'   # Not required at the time of eval
+structure_upsample_path: './ckpt/StructureUpsampling.pth'
+###########################
+# modify the line path
+train_line_path: "./places2_train_wireframes"
+eval_line_path: "./places2_val_wireframes"
+# modify the image path
+TRAIN_FLIST: /home/wmlce/places365_standard/places2_all/train_list.txt
+VAL_FLIST: /home/wmlce/places365_standard/places2_all/test_sub_list.txt
+TEST_FLIST: /home/wmlce/places365_standard/places2_all/test_sub_list.txt
+# set the GT images folder for metrics computation
+GT_Val_FOLDER: '/home/wmlce/places365_standard/val_256img_for_eval'
+# modify the mask path
+TRAIN_MASK_FLIST: [ '/home/wmlce/irregular_mask/irregular_mask_list.txt',
+                    '/home/wmlce/coco_mask/coco_mask_list.txt' ]
+MASK_RATE: [0.4, 0.8, 1.0]
+TEST_MASK_FLIST: /home/wmlce/Image-Transformer-Inpainting/data/indoor/test_mask
+
+BATCH_SIZE: 32                 # input batch size for training
+INPUT_SIZE: 256               # input image size for training 0 for original size
+START_ITERS: 800000             # start iters for lama
+MIX_ITERS: 808000                # gradually mix the edge and line with prediction from transformer
+Turning_Point: 820000            # only use the predict from transformer for edge and line
+MAX_ITERS: 850001                # maximum number of iterations to train the model
+
+SAVE_INTERVAL: 1000           # how many iterations to wait before saving model (0: never)
+SAMPLE_INTERVAL: 1000         # how many iterations to wait before sampling (0: never)
+SAMPLE_SIZE: 12               # number of images to sample
+EVAL_INTERVAL: 2000              # how many iterations to wait before model evaluation (0: never)
+LOG_INTERVAL: 1000            # how many iterations to wait before logging training status (0: never)
+
+run_title: ''
+
+training_model:
+  kind: default
+losses:
+  l1:
+    weight_missing: 0
+    weight_known: 10
+  perceptual:
+    weight: 0
+  adversarial:
+    weight: 10
+    gp_coef: 0.001
+    mask_as_fake_target: true
+    allow_scale_mask: true
+  feature_matching:
+    weight: 100
+  resnet_pl:
+    weight: 30
+    weights_path: './'   # path to ade20k pretrained perceptual loss model provided by LaMa
+optimizers:
+  warmup_steps: 2000
+  generator:
+    kind: adam
+    lr: 3.0e-4
+  discriminator:
+    kind: adam
+    lr: 1.0e-4
+  decay_steps: 400000
+  decay_rate: 0.5
+
+generator:
+  input_nc: 4
+  output_nc: 3
+  ngf: 64
+  n_downsampling: 3
+  n_blocks: 9
+  add_out_act: sigmoid
+  init_conv_kwargs:
+    ratio_gin: 0
+    ratio_gout: 0
+    enable_lfu: false
+  downsample_conv_kwargs:
+    ratio_gin: 0
+    ratio_gout: 0
+    enable_lfu: false
+  resnet_conv_kwargs:
+    ratio_gin: 0.75
+    ratio_gout: 0.75
+    enable_lfu: false
+discriminator:
+  input_nc: 3
