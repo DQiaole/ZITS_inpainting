@@ -29,13 +29,11 @@ learned through row-wise and column-wise attentions respectively, then encoded b
     ```
     conda create -n train_env python=3.6
     conda activate train_env
+    pip install torch==1.9.0+cu111 torchvision==0.10.0+cu111 torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html
+    pip install -r train_requirement.txt
     git clone https://github.com/NVIDIA/apex
     cd apex
     pip install -v --disable-pip-version-check --no-cache-dir --global-option="--cpp_ext" ./
-    ```
-    then complete the environment via
-    ```
-    pip install -r train_requirement.txt
     ```
 2. For training, [MST](https://github.com/ewrfcas/MST_inpainting) provide irregular and segmentation masks ([download](https://drive.google.com/drive/folders/1eU6VaTWGdgCXXWueCXilt6oxHdONgUgf?usp=sharing)) with different masking rates. And you should define the mask file list before the training as in [MST](https://github.com/ewrfcas/MST_inpainting).  
 3. Download the pretrained masked wireframe detection model: [LSM-HAWP](https://drive.google.com/drive/folders/1yg4Nc20D34sON0Ni_IOezjJCFHXKGWUW?usp=sharing) ([MST ICCV2021](https://github.com/ewrfcas/MST_inpainting) retrained from [HAWP CVPR2020](https://github.com/cherubicXN/hawp)).

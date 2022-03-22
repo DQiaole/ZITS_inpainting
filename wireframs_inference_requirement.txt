@@ -6,6 +6,4 @@ scikit-image==0.17.2
 pillow==8.1.0
 yaml==5.3.1
 yacs
-pickle
 tqdm
-lpips
