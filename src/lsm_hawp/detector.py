@@ -1,10 +1,8 @@
 import numpy as np
-import skimage.draw
 import torch
 import torch.nn.functional as F
 from torch import nn
 
-from src.utils import to_device, to_tensor
 from .model_config import get_config
 from .multi_task_head import MultitaskHead
 from .stacked_hg import HourglassNet, Bottleneck2D
@@ -247,75 +245,3 @@ class WireframeDetector(nn.Module):
         lines = torch.stack((x_st_final, y_st_final, x_ed_final, y_ed_final)).permute((1, 2, 3, 0))
 
         return lines
-
-
-def hawp_inference_test(lsm_hawp, images, masks, hawp_mean, hawp_std, device,
-                        img_size=256, obj_remove=False, valid_th=0.95, mask_th=0.925):
-    lsm_hawp.eval() # !!!
-    with torch.no_grad():
-        images = images * 255.
-        origin_masks = masks
-        masks = F.interpolate(masks, size=(images.shape[2], images.shape[3]), mode='nearest')
-        # the mask value of hawp is 127.5
-        masked_images = images * (1 - masks) + torch.ones_like(images) * masks * 127.5
-        images = (images - hawp_mean) / hawp_std
-        masked_images = (masked_images - hawp_mean) / hawp_std
-
-        def to_int(x):
-            return tuple(map(int, x))
-
-        lines_tensor = []
-        target_mask = origin_masks.cpu().numpy()  # origin_masks, masks size is diff
-        for i in range(images.shape[0]):
-            lmap = np.zeros((img_size, img_size))
-
-            output_nomask = lsm_hawp(images[i].unsqueeze(0))
-            output_nomask = to_device(output_nomask, 'cpu')
-            if output_nomask['num_proposals'] == 0:
-                lines_nomask = []
-                scores_nomask = []
-            else:
-                lines_nomask = output_nomask['lines_pred'].numpy()
-                lines_nomask = [[line[1] * img_size, line[0] * img_size,
-                                 line[3] * img_size, line[2] * img_size]
-                                for line in lines_nomask]
-                scores_nomask = output_nomask['lines_score'].numpy()
-
-            output_masked = lsm_hawp(masked_images[i].unsqueeze(0))
-            output_masked = to_device(output_masked, 'cpu')
-            if output_masked['num_proposals'] == 0:
-                lines_masked = []
-                scores_masked = []
-            else:
-                lines_masked = output_masked['lines_pred'].numpy()
-                lines_masked = [[line[1] * img_size, line[0] * img_size,
-                                 line[3] * img_size, line[2] * img_size]
-                                for line in lines_masked]
-                scores_masked = output_masked['lines_score'].numpy()
-
-            target_mask_ = target_mask[i, 0]
-            if obj_remove:
-                for line, score in zip(lines_nomask, scores_nomask):
-                    line = np.clip(line, 0, 255)
-                    if score > valid_th and (
-                            target_mask_[to_int(line[0:2])] == 0 or target_mask_[to_int(line[2:4])] == 0):
-                        rr, cc, value = skimage.draw.line_aa(*to_int(line[0:2]), *to_int(line[2:4]))
-                        lmap[rr, cc] = np.maximum(lmap[rr, cc], value)
-                for line, score in zip(lines_masked, scores_masked):
-                    line = np.clip(line, 0, 255)
-                    if score > mask_th and target_mask_[to_int(line[0:2])] == 1 and target_mask_[
-                        to_int(line[2:4])] == 1:
-                        rr, cc, value = skimage.draw.line_aa(*to_int(line[0:2]), *to_int(line[2:4]))
-                        lmap[rr, cc] = np.maximum(lmap[rr, cc], value)
-            else:
-                for line, score in zip(lines_masked, scores_masked):
-                    line = np.clip(line, 0, 255)
-                    if score > mask_th:
-                        rr, cc, value = skimage.draw.line_aa(*to_int(line[0:2]), *to_int(line[2:4]))
-                        lmap[rr, cc] = np.maximum(lmap[rr, cc], value)
-
-            lmap = np.clip(lmap * 255, 0, 255).astype(np.uint8)
-            lines_tensor.append(to_tensor(lmap).unsqueeze(0))
-
-        lines_tensor = torch.cat(lines_tensor, dim=0)
-    return lines_tensor.detach().to(device)
