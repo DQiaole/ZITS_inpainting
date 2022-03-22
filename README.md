@@ -41,12 +41,12 @@ learned through row-wise and column-wise attentions respectively, then encoded b
     
     as the MST train the LSM-HAWP in Pytorch 1.3.1 and it causes [problem](https://github.com/cherubicXN/hawp/issues/31) when tested in Pytorch 1.9, we recommand to inference the lines(wireframes) with torch==1.3.1. If the line detection is not based on torch1.3.1, the performance may drop a little. 
     ```
-    conda create -n wireframs_inference_env python=3.6
-    conda activate wireframs_inference_env
+    conda create -n wireframes_inference_env python=3.6
+    conda activate wireframes_inference_env
     pip install torch==1.3.1 torchvision==0.4.2
    pip install -r requirement.txt
     ``` 
-   then extracting the wireframs use following code
+   then extract wireframes with following code
     ```
     python lsm_hawp_inference.py --ckpt_path <best_lsm_hawp.pth> --input_path <input image path> --output_path <output image path> --gpu_ids '0'
     ```
@@ -78,10 +78,10 @@ python FTR_inference.py --path ./ckpt/zits_places2_hr --config_file ./config_lis
 
 #### Single Image Test
 
-Note: For single image test, environment 'wireframs_inference_env' in step 4 is recommended for a better line detection.
+Note: For single image test, environment 'wireframes_inference_env' in step 4 is recommended for a better line detection.
 
 ```
-conda activate wireframs_inference_env
+conda activate wireframes_inference_env
 python single_image_test.py --path <ckpt_path> --config_file <config_path> \
  --GPU_ids '0' --img_path ./image.png --mask_path ./mask.png --save_path ./
 ```
