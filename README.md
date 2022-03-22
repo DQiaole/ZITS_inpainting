@@ -25,7 +25,7 @@ learned through row-wise and column-wise attentions respectively, then encoded b
 
 1. Preparing the environment:
 
-    as there is some bug when using GP loss with DDP, we recommend installing Apex without CUDA extensions via
+    as there is some bug when using [GP loss with DDP](https://github.com/pytorch/pytorch/issues/47562), we recommend installing Apex without CUDA extensions via
     ```
     conda create -n train_env python=3.6
     conda activate train_env
