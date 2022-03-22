@@ -36,7 +36,7 @@ learned through row-wise and column-wise attentions respectively, then encoded b
     pip install -v --disable-pip-version-check --no-cache-dir --global-option="--cpp_ext" ./
     ```
 2. For training, [MST](https://github.com/ewrfcas/MST_inpainting) provide irregular and segmentation masks ([download](https://drive.google.com/drive/folders/1eU6VaTWGdgCXXWueCXilt6oxHdONgUgf?usp=sharing)) with different masking rates. And you should define the mask file list before the training as in [MST](https://github.com/ewrfcas/MST_inpainting).  
-3. Download the pretrained masked wireframe detection model to the './ckpt' fold.: [LSM-HAWP](https://drive.google.com/drive/folders/1yg4Nc20D34sON0Ni_IOezjJCFHXKGWUW?usp=sharing) ([MST ICCV2021](https://github.com/ewrfcas/MST_inpainting) retrained from [HAWP CVPR2020](https://github.com/cherubicXN/hawp)).
+3. Download the pretrained masked wireframe detection model to the './ckpt' fold: [LSM-HAWP](https://drive.google.com/drive/folders/1yg4Nc20D34sON0Ni_IOezjJCFHXKGWUW?usp=sharing) ([MST ICCV2021](https://github.com/ewrfcas/MST_inpainting) retrained from [HAWP CVPR2020](https://github.com/cherubicXN/hawp)).
 4. Prepare the wireframes:
     
     as the MST train the LSM-HAWP in Pytorch 1.3.1 and it causes [problem](https://github.com/cherubicXN/hawp/issues/31) when tested in Pytorch 1.9, we recommand to inference the lines(wireframes) with torch==1.3.1. If the line detection is not based on torch1.3.1, the performance may drop a little. 
