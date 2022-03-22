@@ -60,7 +60,7 @@ learned through row-wise and column-wise attentions respectively, then encoded b
 ## Eval
 
 #### Batch Test
-For batch eval, you need to complete steps 3 and 4 above.
+For batch test, you need to complete steps 3 and 4 above.
 
 Download the pretrained models on Places2 [here](https://drive.google.com/drive/folders/1Dg_6ZCAi0U3HzrYgXwr9nSaOLnPsf9n-?usp=sharing) to the './ckpt' fold.
 Then modify the config file according to you image, mask and wireframes path.
