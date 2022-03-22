@@ -10,10 +10,7 @@ by [Qiaole Dong*](https://github.com/DQiaole),
 ## Pipeline
 
 ![](./imgs/overview.jpg)
-The overview of our ZITS. At first, the TSR model is used to restore structures with low resolutions. Then the simple CNN based 
-upsampler is leveraged to upsample edge and line maps. Moreover, the upsampled sketch space is encoded by the SFE model, and added
-to the FTR through ZeroRA to restore the textures. The top left corner show details about the transformer block. The input feature are
-learned through row-wise and column-wise attentions respectively, then encoded by a standard attention module.
+The overview of our ZITS. At first, the TSR model is used to restore structures with low resolutions. Then the simple CNN based upsampler is leveraged to upsample edge and line maps. Moreover, the upsampled sketch space is encoded and added to the FTR through ZeroRA to restore the textures.
 
 ## TO DO
 
@@ -79,6 +76,7 @@ python FTR_inference.py --path ./ckpt/zits_places2_hr --config_file ./config_lis
 #### Single Image Test
 
 Note: For single image test, environment 'wireframes_inference_env' in step 4 is recommended for a better line detection.
+This code only supports squared images (or they will be center cropped).
 
 ```
 conda activate wireframes_inference_env
