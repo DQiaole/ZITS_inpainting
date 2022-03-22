@@ -109,8 +109,10 @@ def to_tensor(img, norm=False):
 
 def load_image(img_path, mask_path, sigma256=3.0):
     img = cv2.imread(img_path)
+    h, w, _ = img.shape
+    input_size = min(h, w)
     img = img[:, :, ::-1]
-    # img = resize(img, input_size, input_size)
+    img = resize(img, input_size, input_size, center_crop=True)
     imgh, imgw = img.shape[0:2]
     img_256 = resize(img, 256, 256)
     mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
@@ -319,10 +321,12 @@ if __name__ == "__main__":
     # build the model and load the best model for eval
     model = ZITS(config, 0, 0, True)
     model.inpaint_model.eval()
+
     # load hawp
     print("load HAWP")
     wf = WireframeDetector(is_cuda=True)
     wf = wf.to(0)
     wf.load_state_dict(torch.load('./ckpt/best_lsm_hawp.pth', map_location='cpu')['model'])
     wf.eval()
+
     test(model, wf, args.img_path, args.mask_path, args.save_path, 0.85, sigma256=3.0)
