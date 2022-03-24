@@ -8,9 +8,13 @@ by [Qiaole Dong*](https://github.com/DQiaole),
 [![LICENSE](https://img.shields.io/github/license/DQiaole/ZITS_inpainting)](https://github.com/DQiaole/ZITS_inpainting/blob/main/LICENSE)
 
 ## Pipeline
+<details>
+  <summary>Click to expand </summary>
 
 ![](./imgs/overview.jpg)
 The overview of our ZITS. At first, the TSR model is used to restore structures with low resolutions. Then the simple CNN based upsampler is leveraged to upsample edge and line maps. Moreover, the upsampled sketch space is encoded and added to the FTR through ZeroRA to restore the textures.
+
+</details>
 
 ## TO DO
 
@@ -19,10 +23,12 @@ The overview of our ZITS. At first, the TSR model is used to restore structures 
 - [ ] Releasing training codes.
 
 ## Preparation
+<details>
+  <summary>Click to expand </summary>
 
 1. Preparing the environment:
 
-    as there are some bugs when using [GP loss with DDP](https://github.com/pytorch/pytorch/issues/47562), we strongly recommend installing Apex without CUDA extensions via torch1.9.0 for the multi-gpu training
+    as there are some bugs when using GP loss with DDP ([link](https://github.com/pytorch/pytorch/issues/47562)), we strongly recommend installing Apex without CUDA extensions via torch1.9.0 for the multi-gpu training
     ```
     conda create -n train_env python=3.6
     conda activate train_env
@@ -36,7 +42,7 @@ The overview of our ZITS. At first, the TSR model is used to restore structures 
 3. Download the pretrained masked wireframe detection model to the './ckpt' fold.: [LSM-HAWP](https://drive.google.com/drive/folders/1yg4Nc20D34sON0Ni_IOezjJCFHXKGWUW?usp=sharing) ([MST ICCV2021](https://github.com/ewrfcas/MST_inpainting) retrained from [HAWP CVPR2020](https://github.com/cherubicXN/hawp)).
 4. Prepare the wireframes:
     
-    as the MST train the LSM-HAWP in Pytorch 1.3.1 and it causes [problem](https://github.com/cherubicXN/hawp/issues/31) when tested in Pytorch 1.9, we recommand to inference the lines(wireframes) with torch==1.3.1. If the line detection is not based on torch1.3.1, the performance may drop a little. 
+    as the MST train the LSM-HAWP in Pytorch 1.3.1 and it causes problem ([link](https://github.com/cherubicXN/hawp/issues/31)) when tested in Pytorch 1.9, we recommand to inference the lines(wireframes) with torch==1.3.1. If the line detection is not based on torch1.3.1, the performance may drop a little. 
     ```
     conda create -n wireframes_inference_env python=3.6
     conda activate wireframes_inference_env
@@ -53,13 +59,19 @@ The overview of our ZITS. At first, the TSR model is used to restore structures 
     mkdir -p ade20k/ade20k-resnet50dilated-ppm_deepsup/
     wget -P ade20k/ade20k-resnet50dilated-ppm_deepsup/ http://sceneparsing.csail.mit.edu/model/pytorch/ade20k-resnet50dilated-ppm_deepsup/encoder_epoch_20.pth
     ```
+
+</details>
    
 ## Eval
+<details>
+  <summary>Click to expand </summary>
+
+Download pretrained models on Places2 [here](https://drive.google.com/drive/folders/1Dg_6ZCAi0U3HzrYgXwr9nSaOLnPsf9n-?usp=sharing).
 
 #### Batch Test
 For batch eval, you need to complete steps 3 and 4 above.
 
-Download the pretrained models on Places2 [here](https://drive.google.com/drive/folders/1Dg_6ZCAi0U3HzrYgXwr9nSaOLnPsf9n-?usp=sharing) to the './ckpt' fold.
+Put the pretrained models to the './ckpt' fold.
 Then modify the config file according to you image, mask and wireframes path.
 
 Test on 256 images:
@@ -131,9 +143,15 @@ python FTR_train.py --nodes 1 --gpus 2 --GPU_ids '0,1' --path ./ckpt/places2 \
 ```
 -->
 
+</details>
+
 ## More 1K Results
+<details>
+  <summary>Click to expand </summary>
 
 ![](./imgs/supp_highres.jpg)
+
+</details>
 
 ## Acknowledgments
 
