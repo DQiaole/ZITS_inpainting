@@ -160,7 +160,7 @@ def to_device(data, device):
         return [to_device(d, device) for d in data]
 
 
-def wf_inference_test(wf, images, h, w, masks, obj_remove=True, valid_th=0.925, mask_th=0.925):
+def wf_inference_test(wf, images, h, w, masks, obj_remove=False, valid_th=0.925, mask_th=0.925):
     lcnn_mean = torch.tensor([109.730, 103.832, 98.681]).to(0).reshape(1, 3, 1, 1)
     lcnn_std = torch.tensor([22.275, 22.124, 23.229]).to(0).reshape(1, 3, 1, 1)
     with torch.no_grad():
