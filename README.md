@@ -125,6 +125,10 @@ python TSR_train.py --name places2_continous_edgeline --data_path [training_data
  --valid_mask_path [validation_mask] --nodes 1 --gpus 1 --GPU_ids '0' --AMP --MaP
 ```
 
+#### Train SSU
+
+We recommend to use the pretrained SSU. You can also train your SSU refered to https://github.com/ewrfcas/StructureUpsampling.
+
 #### Training LaMa First
 
 ```
