@@ -156,6 +156,8 @@ python FTR_train.py --nodes 1 --gpus 2 --GPU_ids '0,1' --path ./ckpt/places2_HR 
 ## More 1K Results
 <details>
   <summary>Click to expand </summary>
+  
+![](./imgs/supp_highres2.jpg)
 
 ![](./imgs/supp_highres.jpg)
 
