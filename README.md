@@ -22,7 +22,7 @@ We have updated weights of TSR!
 
 - [x] Releasing inference codes.
 - [x] Releasing pre-trained moodel.
-- [ ] Releasing training codes.
+- [x] Releasing training codes.
 
 ## Preparation
 <details>
