@@ -77,5 +77,3 @@ generator:
     enable_lfu: false
 discriminator:
   input_nc: 3
-  ndf: 64
-  n_layers: 4

@@ -122,14 +122,13 @@ python TSR_train.py --name places2_continous_edgeline --data_path [training_data
  --mask_path ['irregular_mask_list.txt', 'coco_mask_list.txt'] \
  --train_epoch 15 --validation_path [validation_data_path] \
  --val_line_path [validation_wireframes_path] \
- --valid_mask_path [validation_mask] --nodes 1 \
- --gpus 1 --GPU_ids '0' --AMP --MaP
+ --valid_mask_path [validation_mask] --nodes 1 --gpus 1 --GPU_ids '0' --AMP --MaP
 ```
 
 #### Training LaMa First
 
 ```
-python FTR_train.py --nodes 1 --gpus 1 --GPU_ids '0' --path ./ckpt/lama \
+python FTR_train.py --nodes 1 --gpus 1 --GPU_ids '0' --path ./ckpt/lama_places2 \
 --config_file ./config_list/config_LAMA.yml --lama
 ```
 
