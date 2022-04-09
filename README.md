@@ -97,27 +97,30 @@ conda activate wireframes_inference_env
 python single_image_test.py --path <ckpt_path> --config_file <config_path> \
  --GPU_ids '0' --img_path ./image.png --mask_path ./mask.png --save_path ./
 ```
+</details>
 
-<!--
 ## Training
+
+<details>
+    <summary>Click to expand </summary>
 
 :warning: Warning: The training codes is not fully tested yet after refactoring
 
 #### Training TSR
 ```
-python TSR_train.py --name [exp_name] --data_path [training_data_path] \
+python TSR_train.py --name places2_continous_edgeline --data_path [training_data_path] \
  --train_line_path [training_wireframes_path] \
  --mask_path ['irregular_mask_list.txt', 'coco_mask_list.txt'] \
- --train_epoch [epochs] --validation_path [validation_data_path] \
+ --train_epoch 12 --validation_path [validation_data_path] \
  --val_line_path [validation_wireframes_path] \
  --valid_mask_path [validation_mask] --nodes 1 --gpus 1 --GPU_ids '0' --AMP
 ```
 
 ```
-python TSR_train.py --name [exp_name] --data_path [training_data_path] \
+python TSR_train.py --name places2_continous_edgeline --data_path [training_data_path] \
  --train_line_path [training_wireframes_path] \
  --mask_path ['irregular_mask_list.txt', 'coco_mask_list.txt'] \
- --train_epoch [epochs] --validation_path [validation_data_path] \
+ --train_epoch 15 --validation_path [validation_data_path] \
  --val_line_path [validation_wireframes_path] \
  --valid_mask_path [validation_mask] --nodes 1 \
  --gpus 1 --GPU_ids '0' --AMP --MaP
@@ -135,17 +138,17 @@ python FTR_train.py --nodes 1 --gpus 1 --GPU_ids '0' --path ./ckpt/lama \
 256:
 ```
 python FTR_train.py --nodes 1 --gpus 2 --GPU_ids '0,1' --path ./ckpt/places2 \
---config_file ./config_list/config_LAMA_MPE_places2.yml \--DDP
+--config_file ./config_list/config_ZITS_places2.yml --DDP
 ```
 
 256~512:
 ```
-python FTR_train.py --nodes 1 --gpus 2 --GPU_ids '0,1' --path ./ckpt/places2 \
---config_file ./config_list/config_LAMA_MPE_HR_places2.yml --DDP
+python FTR_train.py --nodes 1 --gpus 2 --GPU_ids '0,1' --path ./ckpt/places2_HR \
+--config_file ./config_list/config_ZITS_HR_places2.yml --DDP
 ```
--->
 
 </details>
+
 
 ## More 1K Results
 <details>

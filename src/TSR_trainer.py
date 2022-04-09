@@ -121,7 +121,7 @@ class TrainerForContinuousEdgeLine:
         if loaded_ckpt is not None:
             optimizer.load_state_dict(loaded_ckpt['optimizer'])
             self.iterations = loaded_ckpt['iterations']
-            best_F1 = loaded_ckpt['best_validation']
+            bestAverageF1 = loaded_ckpt['best_validation']
             previous_epoch = loaded_ckpt['epoch']
             if self.global_rank == 0:
                 self.logger.info('Finished reloading the Epoch %d optimizer' % (loaded_ckpt['epoch']))

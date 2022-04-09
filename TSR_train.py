@@ -78,8 +78,8 @@ if __name__ == '__main__':
     parser.add_argument('--mask_path', type=list, default=['irregular_mask_list.txt', 'coco_mask_list.txt'])
     parser.add_argument('--mask_rates', type=list, default=[0.4, 0.8, 1.0],
                         help='irregular rate, coco rate, addition rate')
-    parser.add_argument('--batch_size', type=int, default=32, help='16*8 maybe suitable for V100')
-    parser.add_argument('--train_epoch', type=int, default=15, help='how many epochs')
+    parser.add_argument('--batch_size', type=int, default=32)
+    parser.add_argument('--train_epoch', type=int, default=12, help='how many epochs')
     parser.add_argument('--print_freq', type=int, default=100, help='While training, the freq of printing log')
     parser.add_argument('--validation_path', type=str, default=None, help='where is the validation set of ImageNet')
     parser.add_argument('--val_line_path', type=str, default=None, help='Indicate where is the wireframes of val set')
