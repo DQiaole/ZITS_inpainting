@@ -20,6 +20,8 @@ The overview of our ZITS. At first, the TSR model is used to restore structures 
 
 We have updated weights of TSR!
 
+Our project page is available at [https://dqiaole.github.io/ZITS_inpainting/].
+
 - [x] Releasing inference codes.
 - [x] Releasing pre-trained moodel.
 - [x] Releasing training codes.
