@@ -267,32 +267,34 @@ class ZITS:
             round = 1
         else:
             round = config.round
-        self.train_dataset = DynamicDataset(config.TRAIN_FLIST, mask_path=config.TRAIN_MASK_FLIST,
-                                            batch_size=config.BATCH_SIZE // config.world_size,
-                                            pos_num=config.rel_pos_num, augment=True, training=True,
-                                            test_mask_path=None, train_line_path=config.train_line_path,
-                                            add_pos=config.use_MPE, world_size=config.world_size,
-                                            min_sigma=min_sigma, max_sigma=max_sigma, round=round)
-        if config.DDP:
-            self.train_sampler = DistributedSampler(self.train_dataset, num_replicas=config.world_size,
-                                                    rank=self.global_rank, shuffle=True)
-        else:
-            self.train_sampler = DistributedSampler(self.train_dataset, num_replicas=1, rank=0, shuffle=True)
-        self.val_dataset = DynamicDataset(config.VAL_FLIST, mask_path=None, pos_num=config.rel_pos_num,
-                                          batch_size=config.BATCH_SIZE, augment=False, training=False,
-                                          test_mask_path=config.TEST_MASK_FLIST, eval_line_path=config.eval_line_path,
-                                          add_pos=config.use_MPE, input_size=config.INPUT_SIZE,
-                                          min_sigma=min_sigma, max_sigma=max_sigma)
-        self.sample_iterator = self.val_dataset.create_iterator(config.SAMPLE_SIZE)
 
-        self.samples_path = os.path.join(config.PATH, 'samples')
-        self.results_path = os.path.join(config.PATH, 'results')
-        self.val_path = os.path.join(config.PATH, 'validation')
-        create_dir(self.val_path)
+        if not test:
+            self.train_dataset = DynamicDataset(config.TRAIN_FLIST, mask_path=config.TRAIN_MASK_FLIST,
+                                                batch_size=config.BATCH_SIZE // config.world_size,
+                                                pos_num=config.rel_pos_num, augment=True, training=True,
+                                                test_mask_path=None, train_line_path=config.train_line_path,
+                                                add_pos=config.use_MPE, world_size=config.world_size,
+                                                min_sigma=min_sigma, max_sigma=max_sigma, round=round)
+            if config.DDP:
+                self.train_sampler = DistributedSampler(self.train_dataset, num_replicas=config.world_size,
+                                                        rank=self.global_rank, shuffle=True)
+            else:
+                self.train_sampler = DistributedSampler(self.train_dataset, num_replicas=1, rank=0, shuffle=True)
+            self.val_dataset = DynamicDataset(config.VAL_FLIST, mask_path=None, pos_num=config.rel_pos_num,
+                                              batch_size=config.BATCH_SIZE, augment=False, training=False,
+                                              test_mask_path=config.TEST_MASK_FLIST, eval_line_path=config.eval_line_path,
+                                              add_pos=config.use_MPE, input_size=config.INPUT_SIZE,
+                                              min_sigma=min_sigma, max_sigma=max_sigma)
+            self.sample_iterator = self.val_dataset.create_iterator(config.SAMPLE_SIZE)
 
-        self.log_file = os.path.join(config.PATH, 'log_' + self.model_name + '.dat')
+            self.samples_path = os.path.join(config.PATH, 'samples')
+            self.results_path = os.path.join(config.PATH, 'results')
+            self.val_path = os.path.join(config.PATH, 'validation')
+            create_dir(self.val_path)
 
-        self.best = float("inf") if self.inpaint_model.best is None else self.inpaint_model.best
+            self.log_file = os.path.join(config.PATH, 'log_' + self.model_name + '.dat')
+
+            self.best = float("inf") if self.inpaint_model.best is None else self.inpaint_model.best
 
     def save(self):
         if self.global_rank == 0:
