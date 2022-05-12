@@ -72,6 +72,8 @@ Our project page is available at [https://dqiaole.github.io/ZITS_inpainting/](ht
 
 Download pretrained models on Places2 [here](https://drive.google.com/drive/folders/1Dg_6ZCAi0U3HzrYgXwr9nSaOLnPsf9n-?usp=sharing).
 
+Link for [BaiduDrive](https://pan.baidu.com/s/1LYIHabFNJSd0L3qDGYYYVw), password:qnm5
+
 #### Batch Test
 For batch test, you need to complete steps 3 and 4 above.
 
