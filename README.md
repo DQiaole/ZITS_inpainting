@@ -63,6 +63,8 @@ Our project page is available at [https://dqiaole.github.io/ZITS_inpainting/](ht
     mkdir -p ade20k/ade20k-resnet50dilated-ppm_deepsup/
     wget -P ade20k/ade20k-resnet50dilated-ppm_deepsup/ http://sceneparsing.csail.mit.edu/model/pytorch/ade20k-resnet50dilated-ppm_deepsup/encoder_epoch_20.pth
     ```
+   
+To download Indoor dataset ([link](https://pan.baidu.com/s/11O1Q7gcn7dhjPDDUNrmodQ)), passward:hfok  
 
 </details>
    
