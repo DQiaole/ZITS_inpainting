@@ -68,6 +68,8 @@ To download Indoor dataset ([link](https://pan.baidu.com/s/11O1Q7gcn7dhjPDDUNrmo
 
 The test set of Places2 can be find on places2_test_list.txt.
 
+The training and validation split of Indoor can be find on indoor_train_list.txt and indoor_val_list.txt.
+
 </details>
    
 ## Eval
