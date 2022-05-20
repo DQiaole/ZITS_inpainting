@@ -64,7 +64,7 @@ Our project page is available at [https://dqiaole.github.io/ZITS_inpainting/](ht
     wget -P ade20k/ade20k-resnet50dilated-ppm_deepsup/ http://sceneparsing.csail.mit.edu/model/pytorch/ade20k-resnet50dilated-ppm_deepsup/encoder_epoch_20.pth
     ```
    
-To the full Indoor dataset: [BaiduDrive](https://pan.baidu.com/s/11O1Q7gcn7dhjPDDUNrmodQ), passward:hfok;
+To download the full Indoor dataset: [BaiduDrive](https://pan.baidu.com/s/11O1Q7gcn7dhjPDDUNrmodQ), passward:hfok;
 and we supply the validation set of Indoor by [google drive](https://drive.google.com/file/d/1LiJ1b_Cedf_9yQHPcAyDpxgkbcFrtF91/view?usp=sharing)
 
 The test set of Places2 can be find on places2_test_list.txt.
