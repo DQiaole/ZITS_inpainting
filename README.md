@@ -70,6 +70,8 @@ The test set of Places2 can be find on places2_test_list.txt.
 
 The training and validation split of Indoor can be find on indoor_train_list.txt and indoor_val_list.txt.
 
+test_mask.zip includes 1000 test masks.
+
 </details>
    
 ## Eval
