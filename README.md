@@ -66,6 +66,8 @@ Our project page is available at [https://dqiaole.github.io/ZITS_inpainting/](ht
    
 To download Indoor dataset ([link](https://pan.baidu.com/s/11O1Q7gcn7dhjPDDUNrmodQ)), passward:hfok  
 
+The test set of Places2 can be find on places2_test_list.txt.
+
 </details>
    
 ## Eval
