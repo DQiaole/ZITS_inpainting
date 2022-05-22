@@ -65,7 +65,7 @@ Our project page is available at [https://dqiaole.github.io/ZITS_inpainting/](ht
     ```
    
 To download the full Indoor dataset: [BaiduDrive](https://pan.baidu.com/s/11O1Q7gcn7dhjPDDUNrmodQ), passward:hfok;
-and we supply the validation set of Indoor by [google drive](https://drive.google.com/file/d/1LiJ1b_Cedf_9yQHPcAyDpxgkbcFrtF91/view?usp=sharing)
+To download Indoor dataset ([link](https://pan.baidu.com/s/11O1Q7gcn7dhjPDDUNrmodQ)), passward:hfok, google drive ([link](https://drive.google.com/file/d/1ugVvsEifcNjR5cb6w4rSaHk5YcpEICvG/view?usp=sharing))
 
 The test set of Places2 can be find on places2_test_list.txt.
 
