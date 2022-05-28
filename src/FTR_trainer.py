@@ -280,21 +280,23 @@ class ZITS:
                                                         rank=self.global_rank, shuffle=True)
             else:
                 self.train_sampler = DistributedSampler(self.train_dataset, num_replicas=1, rank=0, shuffle=True)
-            self.val_dataset = DynamicDataset(config.VAL_FLIST, mask_path=None, pos_num=config.rel_pos_num,
-                                              batch_size=config.BATCH_SIZE, augment=False, training=False,
-                                              test_mask_path=config.TEST_MASK_FLIST, eval_line_path=config.eval_line_path,
-                                              add_pos=config.use_MPE, input_size=config.INPUT_SIZE,
-                                              min_sigma=min_sigma, max_sigma=max_sigma)
-            self.sample_iterator = self.val_dataset.create_iterator(config.SAMPLE_SIZE)
 
             self.samples_path = os.path.join(config.PATH, 'samples')
             self.results_path = os.path.join(config.PATH, 'results')
-            self.val_path = os.path.join(config.PATH, 'validation')
-            create_dir(self.val_path)
 
             self.log_file = os.path.join(config.PATH, 'log_' + self.model_name + '.dat')
 
             self.best = float("inf") if self.inpaint_model.best is None else self.inpaint_model.best
+
+        self.val_dataset = DynamicDataset(config.VAL_FLIST, mask_path=None, pos_num=config.rel_pos_num,
+                                          batch_size=config.BATCH_SIZE, augment=False, training=False,
+                                          test_mask_path=config.TEST_MASK_FLIST,
+                                          eval_line_path=config.eval_line_path,
+                                          add_pos=config.use_MPE, input_size=config.INPUT_SIZE,
+                                          min_sigma=min_sigma, max_sigma=max_sigma)
+        self.sample_iterator = self.val_dataset.create_iterator(config.SAMPLE_SIZE)
+        self.val_path = os.path.join(config.PATH, 'validation')
+        create_dir(self.val_path)
 
     def save(self):
         if self.global_rank == 0:
