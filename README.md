@@ -7,6 +7,8 @@ by [Qiaole Dong*](https://github.com/DQiaole),
 
 [![LICENSE](https://img.shields.io/github/license/DQiaole/ZITS_inpainting)](https://github.com/DQiaole/ZITS_inpainting/blob/main/LICENSE)
 
+Our project page is available at [https://dqiaole.github.io/ZITS_inpainting/](https://dqiaole.github.io/ZITS_inpainting/).
+
 ## Pipeline
 <details>
   <summary>Click to expand </summary>
@@ -17,10 +19,6 @@ The overview of our ZITS. At first, the TSR model is used to restore structures 
 </details>
 
 ## TO DO
-
-We have updated weights of TSR!
-
-Our project page is available at [https://dqiaole.github.io/ZITS_inpainting/](https://dqiaole.github.io/ZITS_inpainting/).
 
 - [x] Releasing inference codes.
 - [x] Releasing pre-trained moodel.
@@ -45,16 +43,18 @@ Our project page is available at [https://dqiaole.github.io/ZITS_inpainting/](ht
 2. For training, [MST](https://github.com/ewrfcas/MST_inpainting) provide irregular and segmentation masks ([download](https://drive.google.com/drive/folders/1eU6VaTWGdgCXXWueCXilt6oxHdONgUgf?usp=sharing)) with different masking rates. And you should define the mask file list before the training as in [MST](https://github.com/ewrfcas/MST_inpainting).  
 3. Download the pretrained masked wireframe detection model to the './ckpt' fold: [LSM-HAWP](https://drive.google.com/drive/folders/1yg4Nc20D34sON0Ni_IOezjJCFHXKGWUW?usp=sharing) ([MST ICCV2021](https://github.com/ewrfcas/MST_inpainting) retrained from [HAWP CVPR2020](https://github.com/cherubicXN/hawp)).
 4. Prepare the wireframes:
-    
+    <!--
     as the MST train the LSM-HAWP in Pytorch 1.3.1 and it causes problem ([link](https://github.com/cherubicXN/hawp/issues/31)) when tested in Pytorch 1.9, we recommand to inference the lines(wireframes) with torch==1.3.1. If the line detection is not based on torch1.3.1, the performance may drop a little. 
     ```
     conda create -n wireframes_inference_env python=3.6
     conda activate wireframes_inference_env
     pip install torch==1.3.1 torchvision==0.4.2
-   pip install -r requirement.txt
+    pip install -r requirement.txt
     ``` 
-   then extract wireframes with following code
+    -->
+    Update: No need prepare another environment anymore, just extract wireframes with following code
     ```
+    conda activate train_env
     python lsm_hawp_inference.py --ckpt_path <best_lsm_hawp.pth> --input_path <input image path> --output_path <output image path> --gpu_ids '0'
     ```
 5. If you need to train the model, please download the pretrained models for perceptual loss,
@@ -102,11 +102,10 @@ python FTR_inference.py --path ./ckpt/zits_places2_hr --config_file ./config_lis
 
 #### Single Image Test
 
-Note: For single image test, environment 'wireframes_inference_env' in step 4 is recommended for a better line detection.
 This code only supports squared images (or they will be center cropped).
 
 ```
-conda activate wireframes_inference_env
+conda activate train_env
 python single_image_test.py --path <ckpt_path> --config_file <config_path> \
  --GPU_ids '0' --img_path ./image.png --mask_path ./mask.png --save_path ./
 ```
