@@ -18,6 +18,7 @@ if __name__ == '__main__':
     parser.add_argument('--ckpt_path', type=str, default='./ckpt/places2_continous_edgeline/best.pth')
     parser.add_argument('--image_url', type=str, default=None, help='the folder of image')
     parser.add_argument('--mask_url', type=str, default=None)
+    parser.add_argument('--test_line_path', type=str, default='', help='Indicate where is the wireframes of test set')
     parser.add_argument('--image_size', type=int, default=256, help='input sequence length: image_size*image_size')
     parser.add_argument('--n_layer', type=int, default=16)
     parser.add_argument('--n_head', type=int, default=8)
@@ -45,7 +46,7 @@ if __name__ == '__main__':
     IGPT_model.cuda()
 
     test_dataset = ContinuousEdgeLineDatasetMask(opts.image_url, test_mask_path=opts.mask_url, is_train=False,
-                                                 image_size=opts.image_size)
+                                                 image_size=opts.image_size, line_path=opts.test_line_path)
 
     for it in tqdm(range(test_dataset.__len__())):
 
