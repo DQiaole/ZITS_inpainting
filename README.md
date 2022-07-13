@@ -5,6 +5,7 @@ by [Qiaole Dong*](https://github.com/DQiaole),
 
 [Paper and Supplemental Material (arXiv)](https://arxiv.org/abs/2203.00867)
 
+[![OSCS Status](https://www.oscs1024.com/platform/badge/DQiaole/ZITS_inpainting.svg?size=small)](https://www.oscs1024.com/project/DQiaole/ZITS_inpainting?ref=badge_small)
 [![LICENSE](https://img.shields.io/github/license/DQiaole/ZITS_inpainting)](https://github.com/DQiaole/ZITS_inpainting/blob/main/LICENSE)
 
 Our project page is available at [https://dqiaole.github.io/ZITS_inpainting/](https://dqiaole.github.io/ZITS_inpainting/).
