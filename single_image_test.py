@@ -319,7 +319,7 @@ if __name__ == "__main__":
     random.seed(config.SEED)
 
     # build the model and load the best model for eval
-    model = ZITS(config, 0, 0, True)
+    model = ZITS(config, 0, 0, True, True)
     model.inpaint_model.eval()
 
     # load hawp
