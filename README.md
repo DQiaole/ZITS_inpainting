@@ -11,13 +11,10 @@ by [Qiaole Dong*](https://github.com/DQiaole),
 Our project page is available at [https://dqiaole.github.io/ZITS_inpainting/](https://dqiaole.github.io/ZITS_inpainting/).
 
 ## Pipeline
-<details>
-  <summary>Click to expand </summary>
 
 ![](./imgs/overview.jpg)
 The overview of our ZITS. At first, the TSR model is used to restore structures with low resolutions. Then the simple CNN based upsampler is leveraged to upsample edge and line maps. Moreover, the upsampled sketch space is encoded and added to the FTR through ZeroRA to restore the textures.
 
-</details>
 
 ## TO DO
 
@@ -26,8 +23,6 @@ The overview of our ZITS. At first, the TSR model is used to restore structures 
 - [x] Releasing training codes.
 
 ## Preparation
-<details>
-  <summary>Click to expand </summary>
 
 1. Preparing the environment:
 
@@ -74,11 +69,8 @@ The training and validation split of Indoor can be find on indoor_train_list.txt
 
 The training masks are contained in coco_mask_list.txt and irregular_mask_list.txt, besides test_mask.zip includes 1000 test masks.
 
-</details>
    
 ## Eval
-<details>
-  <summary>Click to expand </summary>
 
 Download pretrained models on Places2 [here](https://drive.google.com/drive/folders/1Dg_6ZCAi0U3HzrYgXwr9nSaOLnPsf9n-?usp=sharing).
 
@@ -110,12 +102,8 @@ conda activate train_env
 python single_image_test.py --path <ckpt_path> --config_file <config_path> \
  --GPU_ids '0' --img_path ./image.png --mask_path ./mask.png --save_path ./
 ```
-</details>
 
 ## Training
-
-<details>
-    <summary>Click to expand </summary>
 
 :warning: Warning: The training codes is not fully tested yet after refactoring
 
@@ -163,18 +151,13 @@ python FTR_train.py --nodes 1 --gpus 2 --GPU_ids '0,1' --path ./ckpt/places2_HR 
 --config_file ./config_list/config_ZITS_HR_places2.yml --DDP
 ```
 
-</details>
-
 
 ## More 1K Results
-<details>
-  <summary>Click to expand </summary>
   
 ![](./imgs/supp_highres2.jpg)
 
 ![](./imgs/supp_highres.jpg)
 
-</details>
 
 ## Acknowledgments
 
