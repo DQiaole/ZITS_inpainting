@@ -37,6 +37,9 @@ The overview of our ZITS. At first, the TSR model is used to restore structures 
     pip install -v --disable-pip-version-check --no-cache-dir --global-option="--cpp_ext" ./
     ```
 2. For training, [MST](https://github.com/ewrfcas/MST_inpainting) provide irregular and segmentation masks ([download](https://drive.google.com/drive/folders/1eU6VaTWGdgCXXWueCXilt6oxHdONgUgf?usp=sharing)) with different masking rates. And you should define the mask file list before the training as in [MST](https://github.com/ewrfcas/MST_inpainting).  
+   
+   The training masks we used are contained in coco_mask_list.txt and irregular_mask_list.txt, besides test_mask.zip includes 1000 test masks.
+
 3. Download the pretrained masked wireframe detection model to the './ckpt' fold: [LSM-HAWP](https://drive.google.com/drive/folders/1yg4Nc20D34sON0Ni_IOezjJCFHXKGWUW?usp=sharing) ([MST ICCV2021](https://github.com/ewrfcas/MST_inpainting) retrained from [HAWP CVPR2020](https://github.com/cherubicXN/hawp)).
 4. Prepare the wireframes:
     <!--
@@ -59,17 +62,16 @@ The overview of our ZITS. At first, the TSR model is used to restore structures 
     mkdir -p ade20k/ade20k-resnet50dilated-ppm_deepsup/
     wget -P ade20k/ade20k-resnet50dilated-ppm_deepsup/ http://sceneparsing.csail.mit.edu/model/pytorch/ade20k-resnet50dilated-ppm_deepsup/encoder_epoch_20.pth
     ```
-   
-To download the full Indoor dataset: [BaiduDrive](https://pan.baidu.com/s/11O1Q7gcn7dhjPDDUNrmodQ), passward:hfok;
-Google drive ([link](https://drive.google.com/file/d/1ugVvsEifcNjR5cb6w4rSaHk5YcpEICvG/view?usp=sharing))
+ 
+ 6. Indoor Dataset and Test set of Places2 (Optional)
+ 
+    To download the full Indoor dataset: [BaiduDrive](https://pan.baidu.com/s/11O1Q7gcn7dhjPDDUNrmodQ), passward:hfok;
+Google drive ([link](https://drive.google.com/file/d/1ugVvsEifcNjR5cb6w4rSaHk5YcpEICvG/view?usp=sharing)).
+    
+    The training and validation split of Indoor can be find on indoor_train_list.txt and indoor_val_list.txt.
+    
+    The test set of our Places2 can be find on places2_test_list.txt.
 
-The test set of Places2 can be find on places2_test_list.txt.
-
-The training and validation split of Indoor can be find on indoor_train_list.txt and indoor_val_list.txt.
-
-The training masks are contained in coco_mask_list.txt and irregular_mask_list.txt, besides test_mask.zip includes 1000 test masks.
-
-   
 ## Eval
 
 Download pretrained models on Places2 [here](https://drive.google.com/drive/folders/1Dg_6ZCAi0U3HzrYgXwr9nSaOLnPsf9n-?usp=sharing).
