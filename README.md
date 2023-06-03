@@ -19,7 +19,7 @@ The overview of our ZITS. At first, the TSR model is used to restore structures 
 ## TO DO
 
 - [x] Releasing inference codes.
-- [x] Releasing pre-trained moodel.
+- [x] Releasing pre-trained model.
 - [x] Releasing training codes.
 
 ## Preparation
