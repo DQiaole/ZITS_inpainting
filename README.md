@@ -10,6 +10,8 @@ by [Qiaole Dong*](https://github.com/DQiaole),
 
 Our project page is available at [https://dqiaole.github.io/ZITS_inpainting/](https://dqiaole.github.io/ZITS_inpainting/).
 
+<font color=Red>News: Our Extended version [ZITS++](https://ieeexplore.ieee.org/document/10136788) has been accepted by TPAMI, codes and dataset have been released in</font> [here](https://github.com/ewrfcas/ZITS-PlusPlus).
+
 ## Pipeline
 
 ![](./imgs/overview.jpg)
