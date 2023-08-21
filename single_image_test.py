@@ -6,6 +6,7 @@ from shutil import copyfile
 import cv2
 import numpy as np
 import torch
+import torch.onnx
 from src.lsm_hawp.detector import WireframeDetector
 from src.FTR_trainer import ZITS
 from src.config import Config
@@ -273,6 +274,34 @@ def test(model, wf, img_path, mask_path, save_path, valid_th, sigma256=3.0):
     print('\nsaving sample ' + os.path.basename(img_path))
     images.save(save_path + '/' + os.path.basename(img_path))
 
+def export_onnx(model, save_path):
+    imagew = 1000
+    imageh = 1000
+
+    rel_pos, abs_pos, direct = load_masked_position_encoding(np.zeros((imagew, imageh)))
+
+    batch = dict()
+    batch['image'] = torch.randn(imagew, imageh, requires_grad=True)
+    batch['img_256'] = torch.randn(256, 256, requires_grad=True)
+    batch['mask'] = torch.zeros(imagew, imageh, requires_grad=True)
+    batch['mask_256'] = torch.zeros(256, 256, requires_grad=True)
+    batch['mask_512'] = torch.zeros(512, 512, requires_grad=True)
+    batch['edge_256'] = torch.zeros(256, 256, requires_grad=True)
+    batch['img_512'] = torch.randn(512, 512, requires_grad=True)
+    batch['rel_pos'] = torch.LongTensor(rel_pos).unsqueeze(0)
+    batch['abs_pos'] = torch.LongTensor(abs_pos).unsqueeze(0)
+    batch['direct'] = torch.LongTensor(direct).unsqueeze(0)
+    batch['h'] = imageh
+    batch['w'] = imagew
+
+    torch.onnx.export(model,         # model being run
+         batch,                      # model input (or a tuple for multiple inputs)
+         save_path + "ZITS.onnx",    # where to save the model
+         export_params=True,         # store the trained parameter weights inside the model file
+         opset_version=10,           # the ONNX version to export the model to
+         do_constant_folding=True,   # whether to execute constant folding for optimization
+    )
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -284,6 +313,7 @@ if __name__ == "__main__":
     parser.add_argument('--img_path', type=str, help='test image path')
     parser.add_argument('--mask_path', type=str, help='test mask path')
     parser.add_argument('--save_path', type=str, help='the path to save the results')
+    parser.add_argument('--onnx', action='store_true', help='save model as ONNX file')
 
     args = parser.parse_args()
     config_path = os.path.join(args.path, 'config.yml')
@@ -321,6 +351,9 @@ if __name__ == "__main__":
     # build the model and load the best model for eval
     model = ZITS(config, 0, 0, True, True)
     model.inpaint_model.eval()
+
+    if args.onnx:
+        export_onnx(model, args.save_path)
 
     # load hawp
     print("load HAWP")
