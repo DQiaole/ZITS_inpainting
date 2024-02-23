@@ -36,7 +36,7 @@ The overview of our ZITS. At first, the TSR model is used to restore structures 
     pip install -r requirement.txt
     git clone https://github.com/NVIDIA/apex
     cd apex
-    pip install -v --disable-pip-version-check --no-cache-dir --global-option="--cpp_ext" ./
+    pip install -v --disable-pip-version-check --no-cache-dir --global-option="--cpp_ext" --no-build-isolation ./
     ```
 2. For training, [MST](https://github.com/ewrfcas/MST_inpainting) provide irregular and segmentation masks ([download](https://drive.google.com/drive/folders/1eU6VaTWGdgCXXWueCXilt6oxHdONgUgf?usp=sharing)) with different masking rates. And you should define the mask file list before the training as in [MST](https://github.com/ewrfcas/MST_inpainting).  
    
