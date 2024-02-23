@@ -6,7 +6,8 @@ import numpy as np
 import torch
 from scipy import linalg
 from skimage.color import rgb2gray
-from skimage.measure import compare_ssim
+from skimage.metrics import structural_similarity
+#from skimage.measure import compare_ssim
 from torch.autograd import Variable
 from torch.nn.functional import adaptive_avg_pool2d
 from tqdm import tqdm
@@ -227,7 +228,7 @@ def get_inpainting_metrics(src, tgt, logger, fid_test=True):
         mse_ = np.mean((img1 / 255.0 - img2 / 255.0) ** 2)
         mae_ = np.mean(abs(img1 / 255.0 - img2 / 255.0))
         psnr_ = max_value - 10 * np.log(mse_ + 1e-7) / np.log(10)
-        ssim_ = compare_ssim(rgb2gray(img1), rgb2gray(img2))
+        ssim_ = structural_similarity(rgb2gray(img1), rgb2gray(img2))
         psnrs.append(psnr_)
         ssims.append(ssim_)
         mses.append(mse_)
